@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elemental Alchemy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        chem: {
+                            dark: '#0f172a',
+                            panel: '#1e293b',
+                            flask: 'rgba(255, 255, 255, 0.05)',
+                        }
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite',
+                        'pop': 'pop 0.3s ease-out forwards',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        },
+                        pop: {
+                            '0%': { transform: 'scale(0.8)', opacity: '0' },
+                            '50%': { transform: 'scale(1.1)' },
+                            '100%': { transform: 'scale(1)', opacity: '1' }
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 10px rgba(56, 189, 248, 0.5)' },
+                            '100%': { boxShadow: '0 0 30px rgba(56, 189, 248, 0.8), 0 0 50px rgba(56, 189, 248, 0.4)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b; 
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .flask-container {
+            position: relative;
+            width: 250px;
+            height: 300px;
+            margin: 0 auto;
+        }
+
+        .flask-shape {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50% 50% 10% 10% / 70% 70% 10% 10%;
+            clip-path: polygon(40% 0, 60% 0, 60% 30%, 100% 70%, 100% 100%, 0 100%, 0 70%, 40% 30%);
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .flask-neck {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 100px;
+            border-left: 3px solid rgba(255, 255, 255, 0.2);
+            border-right: 3px solid rgba(255, 255, 255, 0.2);
+            border-top: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px 10px 0 0;
+            z-index: 10;
+        }
+
+        .flask-liquid {
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            height: 0%;
+            background: linear-gradient(180deg, rgba(56, 189, 248, 0.4) 0%, rgba(59, 130, 246, 0.6) 100%);
+            border-radius: 0 0 20px 20px;
+            clip-path: polygon(0 100%, 100% 100%, 100% 0, 0 0);
+            transition: height 0.3s ease, background 0.5s ease;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .atom-bubble {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-family: 'JetBrains Mono', monospace;
+            color: white;
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.3), 0 0 10px rgba(255,255,255,0.2);
+            cursor: pointer;
+            z-index: 20;
+            transition: transform 0.2s;
+            user-select: none;
+            animation: pop 0.3s ease-out forwards;
+        }
+
+        .atom-bubble:hover {
+            transform: scale(1.1);
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 50;
+            animation: flyout 1s ease-out forwards;
+        }
+
+        @keyframes flyout {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+        /* --- NEW CODE: Atom Stacking Badge --- */
+        .atom-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background-color: #ef4444; /* red-500 */
+            color: white;
+            font-size: 11px;
+            font-family: 'Inter', sans-serif;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            border: 2px solid #1e293b;
+            z-index: 30;
+        }
+        /* ------------------------------------- */
+
+        /* Element categories */
+        .cat-nonmetal { background: linear-gradient(135deg, #10b981, #059669); }
+        .cat-alkali { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .cat-halogen { background: linear-gradient(135deg, #eab308, #ca8a04); }
+        .cat-metal { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+        .cat-noble { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+        .cat-metalloid { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+
+        .element-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .element-btn:active {
+            transform: scale(0.95);
+        }
+
+        #modal-overlay {
+            backdrop-filter: blur(5px);
+        }
+        
+    #modal-overlay {
+            backdrop-filter: blur(5px);
+        }
+
+        /* --- NEW CODE: Ambient Glow Animation --- */
+        @keyframes ambientBreathe {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+        
+        .ambient-glow-layer {
+            /* Default dark blue glow when empty */
+            background: radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.05) 0%, #0f172a 70%);
+            animation: ambientBreathe 8s infinite ease-in-out;
+        }
+        /* ---------------------------------------- */
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+    
+    <div id="ambient-glow" class="ambient-glow-layer pointer-events-none fixed inset-0 transition-colors duration-[1500ms] ease-in-out z-[-1]"></div>
+
+    <header class="glass-panel sticky top-0 z-40 shadow-lg border-b border-slate-700">
+        <div class="max-w-7xl w-full mx-auto px-6 py-4 flex flex-col sm:flex-row justify-between items-center">
+            <div class="flex items-center gap-3 mb-2 sm:mb-0">
+                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center animate-glow shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+                    Elemental Alchemy
+                </h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="bg-slate-800 px-4 py-2 rounded-full border border-slate-600 flex items-center gap-2">
+                    <span class="text-slate-400 text-sm">Discovered</span>
+                    <span id="discovery-count" class="font-mono font-bold text-emerald-400" aria-live="polite">0 / ?</span>
+                </div>
+                <button onclick="resetProgress()" title="Reset all progress" class="p-2 rounded-full bg-slate-800 hover:bg-red-900 hover:text-red-400 text-slate-500 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+                <button onclick="showInfo()" class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Panel: Elements Palette -->
+        <section class="glass-panel rounded-2xl p-4 lg:col-span-4 flex flex-col h-[400px] lg:h-[calc(100vh-120px)] shadow-xl">
+            <h2 class="text-lg font-semibold mb-3 flex items-center gap-2 text-slate-200">
+                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                Elements
+            </h2>
+            <div class="relative mb-3">
+                <input type="text" id="search-elements" placeholder="Search elements..." class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-400 transition-colors placeholder-slate-500">
+            </div>
+            <div id="elements-grid" class="flex-1 overflow-y-auto grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3 pr-2 pb-2">
+                <!-- Elements injected here by JS -->
+            </div>
+        </section>
+
+        <!-- Center Panel: The Flask and Mixing Area -->
+        <section class="lg:col-span-4 flex flex-col items-center justify-center p-4">
+            
+            <div id="reaction-area" class="w-full flex flex-col items-center">
+                
+                <div class="mb-4 text-center">
+                    <h3 class="text-slate-300 font-medium mb-1">Current Mixture</h3>
+                    <div id="current-formula" class="h-8 font-mono text-lg text-blue-300 tracking-wider" aria-live="polite">Empty</div>
+                </div>
+
+                <div class="flask-container mb-8" id="flask-container">
+                    <div class="flask-neck"></div>
+                    <div class="flask-shape" id="flask-body">
+                        <!-- Liquid background -->
+                        <div class="flask-liquid" id="flask-liquid"></div>
+                        <!-- Atoms container inside flask -->
+                        <div id="flask-atoms" class="absolute top-[20%] left-[5%] w-[90%] h-[75%] z-20 flex flex-wrap content-center justify-center gap-2"></div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 w-full max-w-[300px]">
+                    <button onclick="clearFlask()" class="flex-1 py-3 px-4 rounded-xl font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        Clear
+                    </button>
+                    <button id="mix-btn" onclick="mixElements()" class="flex-[2] py-3 px-4 rounded-xl font-bold bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-400 hover:to-emerald-400 text-white transition-all shadow-[0_0_20px_rgba(56,189,248,0.4)] active:scale-95 flex items-center justify-center gap-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                        MIX
+                    </button>
+                </div>
+                
+                <!-- NEW CODE: Hint System UI -->
+                <div class="flex flex-col items-center mt-4 h-16">
+                    <button onclick="showHint()" class="text-sm font-semibold text-amber-400 hover:text-amber-300 underline underline-offset-4 transition-colors mb-2">
+                        💡 I'm stuck, give me a hint!
+                    </button>
+                    <p id="hint-display" class="text-sm text-slate-400 text-center transition-all opacity-0"></p>
+                </div>
+               
+
+            </div>
+        </section>
+
+        <!-- Right Panel: Discovered Compounds -->
+        <section class="glass-panel rounded-2xl p-4 lg:col-span-4 flex flex-col h-[400px] lg:h-[calc(100vh-120px)] shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold flex items-center gap-2 text-slate-200">
+        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        <span id="panel-title">Discovered</span>
+    </h2>
+    <button id="encyclopedia-toggle" onclick="toggleEncyclopedia()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-700 hover:bg-slate-600 border border-slate-500 text-slate-200 transition-all active:scale-95">
+        <svg id="toggle-icon-book" class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+        <svg id="toggle-icon-list" class="w-4 h-4 text-emerald-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+        <span id="toggle-label">Encyclopedia</span>
+    </button>
+</div>
+            <div id="discovered-list" class="flex-1 overflow-y-auto flex flex-col gap-3 pr-2 pb-2">
+                <!-- Discovered items injected here -->
+                <div class="text-center text-slate-500 mt-10 p-4 border border-dashed border-slate-700 rounded-xl">
+                    Mix elements to discover compounds. Try 2 Hydrogen and 1 Oxygen!
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Result Modal Overlay -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div id="result-modal" class="bg-slate-800 border border-slate-600 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl transform scale-90 transition-transform duration-300">
+            <div id="result-icon" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 text-4xl shadow-lg">
+                <!-- Icon injected by JS -->
+            </div>
+            <h2 id="result-title" class="text-2xl font-bold text-center text-white mb-2">Success!</h2>
+            <div id="result-formula" class="text-center font-mono text-xl text-blue-400 mb-4 font-bold"></div>
+            <p id="result-desc" class="text-slate-300 text-center mb-6 leading-relaxed"></p>
+            <button onclick="closeModal()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors">
+                Continue Exploring
+            </button>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="info-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-800 border border-slate-600 rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl relative">
+            <button onclick="closeInfo()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h2 class="text-2xl font-bold text-white mb-4">How to Play</h2>
+            <ul class="space-y-3 text-slate-300 mb-6">
+                <li class="flex gap-2">
+                    <span class="text-blue-400 font-bold">1.</span>
+                    Select elements from the periodic palette on the left to add them to your flask.
+                </li>
+                <li class="flex gap-2">
+                    <span class="text-blue-400 font-bold">2.</span>
+                    If you make a mistake, click an atom inside the flask to remove it, or use the "Clear" button.
+                </li>
+                <li class="flex gap-2">
+                    <span class="text-blue-400 font-bold">3.</span>
+                    Click "MIX" to see if your combination matches a real-world chemical compound. Order does not matter!
+                </li>
+                <li class="flex gap-2">
+                    <span class="text-blue-400 font-bold">4.</span>
+                    Discover all secret compounds to become a Master Alchemist!
+                </li>
+            </ul>
+            <button onclick="closeInfo()" class="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold transition-colors">
+                Got it
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Data Structures
+        const elementsData = [
+            { symbol: 'H', name: 'Hydrogen', cat: 'nonmetal', weight: 1 },
+            { symbol: 'He', name: 'Helium', cat: 'noble', weight: 4 },
+            { symbol: 'Li', name: 'Lithium', cat: 'alkali', weight: 7 },
+            { symbol: 'C', name: 'Carbon', cat: 'nonmetal', weight: 12 },
+            { symbol: 'N', name: 'Nitrogen', cat: 'nonmetal', weight: 14 },
+            { symbol: 'O', name: 'Oxygen', cat: 'nonmetal', weight: 16 },
+            { symbol: 'F', name: 'Fluorine', cat: 'halogen', weight: 19 },
+            { symbol: 'Ne', name: 'Neon', cat: 'noble', weight: 20 },
+            { symbol: 'Na', name: 'Sodium', cat: 'alkali', weight: 23 },
+            { symbol: 'Mg', name: 'Magnesium', cat: 'alkali', weight: 24 },
+            { symbol: 'Al', name: 'Aluminum', cat: 'metal', weight: 27 },
+            { symbol: 'Si', name: 'Silicon', cat: 'metalloid', weight: 28 },
+            { symbol: 'P', name: 'Phosphorus', cat: 'nonmetal', weight: 31 },
+            { symbol: 'S', name: 'Sulfur', cat: 'nonmetal', weight: 32 },
+            { symbol: 'Cl', name: 'Chlorine', cat: 'halogen', weight: 35.5 },
+            { symbol: 'K', name: 'Potassium', cat: 'alkali', weight: 39 },
+            { symbol: 'Ca', name: 'Calcium', cat: 'alkali', weight: 40 },
+            { symbol: 'Fe', name: 'Iron', cat: 'metal', weight: 56 },
+            { symbol: 'Cu', name: 'Copper', cat: 'metal', weight: 63.5 },
+            { symbol: 'Ag', name: 'Silver', cat: 'metal', weight: 108 },
+            { symbol: 'Au', name: 'Gold', cat: 'metal', weight: 197 },
+            { symbol: 'B', name: 'Boron', cat: 'metalloid', weight: 10.8 },
+{ symbol: 'I', name: 'Iodine', cat: 'halogen', weight: 127 },
+{ symbol: 'Mn', name: 'Manganese', cat: 'metal', weight: 55 },
+{ symbol: 'Cr', name: 'Chromium', cat: 'metal', weight: 52 },
+        ];
+
+        // Ensure recipes are formatted consistently (no spaces in signature)
+        const recipesData = [
+            { id: 'water', name: 'Water', formula: 'H₂O', sig: 'H:2,O:1', desc: 'The essence of life. Essential for all known living organisms.', emoji: '💧' },
+            { id: 'peroxide', name: 'Hydrogen Peroxide', formula: 'H₂O₂', sig: 'H:2,O:2', desc: 'A pale blue liquid used as an oxidizer, bleaching agent, and antiseptic.', emoji: '🧪' },
+            { id: 'co2', name: 'Carbon Dioxide', formula: 'CO₂', sig: 'C:1,O:2', desc: 'A colorless gas vital to plant life, but a greenhouse gas when excessive.', emoji: '💨' },
+            { id: 'co', name: 'Carbon Monoxide', formula: 'CO', sig: 'C:1,O:1', desc: 'A toxic, colorless, odorless gas. Incomplete combustion product.', emoji: '☠️' },
+            { id: 'methane', name: 'Methane', formula: 'CH₄', sig: 'C:1,H:4', desc: 'The main component of natural gas. A powerful greenhouse gas.', emoji: '🔥' },
+            { id: 'ammonia', name: 'Ammonia', formula: 'NH₃', sig: 'H:3,N:1', desc: 'A colorless gas with a pungent smell, widely used in fertilizers.', emoji: '👃' },
+            { id: 'salt', name: 'Table Salt', formula: 'NaCl', sig: 'Cl:1,Na:1', desc: 'Sodium chloride. Essential for animal life in small quantities.', emoji: '🧂' },
+            { id: 'hcl', name: 'Hydrochloric Acid', formula: 'HCl', sig: 'Cl:1,H:1', desc: 'A strongly acidic solution of hydrogen chloride in water.', emoji: '⚠️' },
+            { id: 'rust', name: 'Iron Oxide (Rust)', formula: 'Fe₂O₃', sig: 'Fe:2,O:3', desc: 'The ubiquitous red flaking material found on old iron.', emoji: '🧱' },
+            { id: 'sand', name: 'Silicon Dioxide (Sand)', formula: 'SiO₂', sig: 'O:2,Si:1', desc: 'Major constituent of sand and glass. Found in quartz.', emoji: '🏖️' },
+            { id: 'ethanol', name: 'Ethanol', formula: 'C₂H₆O', sig: 'C:2,H:6,O:1', desc: 'The active ingredient in alcoholic beverages and a common biofuel.', emoji: '🍺' },
+            { id: 'glucose', name: 'Glucose', formula: 'C₆H₁₂O₆', sig: 'C:6,H:12,O:6', desc: 'A simple sugar which is an important energy source in living organisms.', emoji: '🍬' },
+            { id: 'laughing_gas', name: 'Nitrous Oxide', formula: 'N₂O', sig: 'N:2,O:1', desc: 'Known as laughing gas, used in surgery and dentistry for its anesthetic effects.', emoji: '😂' },
+            { id: 'so2', name: 'Sulfur Dioxide', formula: 'SO₂', sig: 'O:2,S:1', desc: 'A toxic gas responsible for the smell of burnt matches.', emoji: '🌋' },
+            { id: 'sulfuric', name: 'Sulfuric Acid', formula: 'H₂SO₄', sig: 'H:2,O:4,S:1', desc: 'A highly corrosive mineral acid. The most produced chemical in the world.', emoji: '☢️' },
+            { id: 'baking_soda', name: 'Sodium Bicarbonate', formula: 'NaHCO₃', sig: 'C:1,H:1,Na:1,O:3', desc: 'Baking soda! Used in cooking, cleaning, and neutralizing acids.', emoji: '🧁' },
+            { id: 'chalk', name: 'Calcium Carbonate', formula: 'CaCO₃', sig: 'C:1,Ca:1,O:3', desc: 'Found in rocks as minerals calcite and aragonite. Main component of pearls and eggshells.', emoji: '🥚' },
+            { id: 'oxygen', name: 'Oxygen Gas', formula: 'O₂', sig: 'O:2', desc: 'Diatomic oxygen. Makes up 21% of the Earth\'s atmosphere.', emoji: '🌬️' },
+            { id: 'ozone', name: 'Ozone', formula: 'O₃', sig: 'O:3', desc: 'A pale blue gas that protects Earth from harmful UV radiation in the stratosphere.', emoji: '🛡️' },
+            { id: 'nitrogen', name: 'Nitrogen Gas', formula: 'N₂', sig: 'N:2', desc: 'Makes up 78% of the Earth\'s atmosphere. Largely inert.', emoji: '🎈' },
+            { id: 'hydrogen', name: 'Hydrogen Gas', formula: 'H₂', sig: 'H:2', desc: 'The lightest and most abundant chemical substance in the universe.', emoji: '🚀' },
+            { id: 'chlorine', name: 'Chlorine Gas', formula: 'Cl₂', sig: 'Cl:2', desc: 'A yellow-green gas that is highly reactive and toxic.', emoji: '🟢' },
+            { id: 'foolsgold', name: 'Iron Pyrite', formula: 'FeS₂', sig: 'Fe:1,S:2', desc: 'Known as fool\'s gold due to its pale brass-yellow hue.', emoji: '✨' },
+            { id: 'cyanide', name: 'Hydrogen Cyanide', formula: 'HCN', sig: 'C:1,H:1,N:1', desc: 'Extremely poisonous, colorless liquid or gas with a faint bitter almond odor.', emoji: '☠️' },
+            // --- NEW CODE: Hydrocarbons ---
+            { id: 'ethylene', name: 'Ethylene', formula: 'C₂H₄', sig: 'C:2,H:4', desc: 'A flammable gas widely used in the chemical industry, and a natural plant hormone.', emoji: '🌱' },
+            { id: 'ethane', name: 'Ethane', formula: 'C₂H₆', sig: 'C:2,H:6', desc: 'A colorless, odorless gas isolated from natural gas.', emoji: '🏭' },
+            { id: 'propane', name: 'Propane', formula: 'C₃H₈', sig: 'C:3,H:8', desc: 'A commonly used fuel for engines, barbecues, and home heating.', emoji: '🏕️' },
+            { id: 'butene', name: 'Butene', formula: 'C₄H₈', sig: 'C:4,H:8', desc: 'A highly flammable hydrocarbon gas used in the production of synthetic rubber.', emoji: '🛞' },
+            { id: 'butane', name: 'Butane', formula: 'C₄H₁₀', sig: 'C:4,H:10', desc: 'A highly flammable gas commonly used as a propellant and in lighters.', emoji: '🧨' },
+            { id: 'benzene', name: 'Benzene', formula: 'C₆H₆', sig: 'C:6,H:6', desc: 'A sweet-smelling, highly flammable liquid with a ring-like molecular structure.', emoji: '⬡' },
+            { id: 'hexane', name: 'Hexane', formula: 'C₆H₁₄', sig: 'C:6,H:14', desc: 'A significant constituent of gasoline, widely used as an industrial solvent.', emoji: '⛽' },
+
+// Acids & bases
+{ id: 'nitric', name: 'Nitric Acid', formula: 'HNO₃', sig: 'H:1,N:1,O:3', desc: 'A highly corrosive mineral acid used in the production of fertilizers and explosives.', emoji: '⚗️' },
+{ id: 'phosphoric', name: 'Phosphoric Acid', formula: 'H₃PO₄', sig: 'H:3,O:4,P:1', desc: 'A weak acid used in fertilizers, food flavoring, and rust removal.', emoji: '🧴' },
+{ id: 'naoh', name: 'Sodium Hydroxide', formula: 'NaOH', sig: 'H:1,Na:1,O:1', desc: 'Lye — a highly caustic base used in soap making and drain cleaners.', emoji: '🧼' },
+{ id: 'ca_oh2', name: 'Calcium Hydroxide', formula: 'Ca(OH)₂', sig: 'Ca:1,H:2,O:2', desc: 'Slaked lime, used in cement, mortar, and to neutralize acidic soil.', emoji: '🏗️' },
+{ id: 'lihf', name: 'Hydrofluoric Acid', formula: 'HF', sig: 'F:1,H:1', desc: 'An extremely corrosive acid that can dissolve glass. Highly dangerous.', emoji: '🚨' },
+
+// Salts & minerals
+{ id: 'mgso4', name: 'Epsom Salt', formula: 'MgSO₄', sig: 'Mg:1,O:4,S:1', desc: 'Magnesium sulfate — used in bath soaks, gardening, and as a laxative.', emoji: '🛁' },
+{ id: 'caco3', name: 'Limestone', formula: 'CaCO₃', sig: 'C:1,Ca:1,O:3', desc: 'Wait — you already know this one as Calcium Carbonate!', emoji: '🪨' },
+{ id: 'naclo', name: 'Bleach', formula: 'NaClO', sig: 'Cl:1,Na:1,O:1', desc: 'Sodium hypochlorite — the active ingredient in household bleach.', emoji: '🫧' },
+{ id: 'kno3', name: 'Saltpeter', formula: 'KNO₃', sig: 'K:1,N:1,O:3', desc: 'Potassium nitrate — historically used in gunpowder and food preservation.', emoji: '💣' },
+{ id: 'cacl2', name: 'Calcium Chloride', formula: 'CaCl₂', sig: 'Ca:1,Cl:2', desc: 'Used to de-ice roads in winter and as a desiccant to absorb moisture.', emoji: '❄️' },
+{ id: 'k2so4', name: 'Potassium Sulfate', formula: 'K₂SO₄', sig: 'K:2,O:4,S:1', desc: 'A common fertilizer providing potassium and sulfur to plants.', emoji: '🌿' },
+{ id: 'feso4', name: 'Iron Sulfate', formula: 'FeSO₄', sig: 'Fe:1,O:4,S:1', desc: 'Used to treat iron deficiency in plants and to purify water.', emoji: '🌱' },
+
+// Nitrogen & phosphorus compounds
+{ id: 'no2', name: 'Nitrogen Dioxide', formula: 'NO₂', sig: 'N:1,O:2', desc: 'A reddish-brown toxic gas and major air pollutant from vehicle exhaust.', emoji: '🚗' },
+{ id: 'no', name: 'Nitric Oxide', formula: 'NO', sig: 'N:1,O:1', desc: 'A colorless gas that acts as a signaling molecule in the human body.', emoji: '🫀' },
+{ id: 'n2h4', name: 'Hydrazine', formula: 'N₂H₄', sig: 'H:4,N:2', desc: 'A toxic, colorless liquid used as rocket fuel and in water treatment.', emoji: '🚀' },
+{ id: 'p4o10', name: 'Phosphorus Pentoxide', formula: 'P₄O₁₀', sig: 'O:10,P:4', desc: 'A powerful desiccant and dehydrating agent that reacts violently with water.', emoji: '💧' },
+
+// Carbon compounds
+{ id: 'cs2', name: 'Carbon Disulfide', formula: 'CS₂', sig: 'C:1,S:2', desc: 'A volatile, flammable solvent with a foul smell, used in making rayon.', emoji: '🧵' },
+{ id: 'hcooh', name: 'Formic Acid', formula: 'CH₂O₂', sig: 'C:1,H:2,O:2', desc: 'The simplest carboxylic acid — the compound responsible for ant stings.', emoji: '🐜' },
+{ id: 'acetone', name: 'Acetone', formula: 'C₃H₆O', sig: 'C:3,H:6,O:1', desc: 'The active ingredient in nail polish remover. A widely used solvent.', emoji: '💅' },
+{ id: 'acetic', name: 'Acetic Acid', formula: 'C₂H₄O₂', sig: 'C:2,H:4,O:2', desc: 'The compound that gives vinegar its sharp taste and pungent smell.', emoji: '🍾' },
+{ id: 'glycerol', name: 'Glycerol', formula: 'C₃H₈O₃', sig: 'C:3,H:8,O:3', desc: 'A sweet, viscous liquid used in soap, pharmaceuticals, and food.', emoji: '🫧' },
+{ id: 'urea', name: 'Urea', formula: 'CH₄N₂O', sig: 'C:1,H:4,N:2,O:1', desc: 'The main nitrogen-containing compound in mammalian urine. Also a major fertilizer.', emoji: '🚽' },
+{ id: 'aspirin', name: 'Aspirin', formula: 'C₉H₈O₄', sig: 'C:9,H:8,O:4', desc: 'Acetylsalicylic acid — one of the most widely used medicines in the world.', emoji: '💊' },
+
+// Silicon & metals
+{ id: 'sic', name: 'Silicon Carbide', formula: 'SiC', sig: 'C:1,Si:1', desc: 'An extremely hard material used in abrasives, semiconductors, and bulletproof vests.', emoji: '🛡️' },
+{ id: 'al2o3', name: 'Aluminium Oxide', formula: 'Al₂O₃', sig: 'Al:2,O:3', desc: 'Corundum — the mineral that makes rubies and sapphires. Used in sandpaper.', emoji: '💎' },
+{ id: 'cus', name: 'Copper Sulfide', formula: 'CuS', sig: 'Cu:1,S:1', desc: 'A black mineral found in nature as the ore covellite. Semiconducting properties.', emoji: '⛏️' },
+{ id: 'cu2o', name: 'Copper Oxide', formula: 'Cu₂O', sig: 'Cu:2,O:1', desc: 'A red-brown solid used as a pigment, fungicide, and in solar cells.', emoji: '🟤' },
+{ id: 'agno3', name: 'Silver Nitrate', formula: 'AgNO₃', sig: 'Ag:1,N:1,O:3', desc: 'Used in photography, as an antiseptic, and to stain biological tissue.', emoji: '📸' },
+{ id: 'fe3o4', name: 'Magnetite', formula: 'Fe₃O₄', sig: 'Fe:3,O:4', desc: 'A naturally magnetic iron oxide mineral — the most magnetic mineral on Earth.', emoji: '🧲' },
+{ id: 'au2o3', name: 'Gold Oxide', formula: 'Au₂O₃', sig: 'Au:2,O:3', desc: 'An unstable dark brown solid — gold resists oxidation, making this rare.', emoji: '👑' },
+// Oxides & atmospheric
+{ id: 'so3', name: 'Sulfur Trioxide', formula: 'SO₃', sig: 'O:3,S:1', desc: 'A highly reactive gas that combines with water to form sulfuric acid. A major industrial chemical.', emoji: '🌫️' },
+{ id: 'cl2o', name: 'Dichlorine Monoxide', formula: 'Cl₂O', sig: 'Cl:2,O:1', desc: 'A yellowish-brown gas used as a bleaching agent and in water treatment.', emoji: '🟡' },
+{ id: 'n2o3', name: 'Dinitrogen Trioxide', formula: 'N₂O₃', sig: 'N:2,O:3', desc: 'The anhydride of nitrous acid. Deep blue liquid at low temperatures.', emoji: '🔵' },
+{ id: 'n2o4', name: 'Dinitrogen Tetroxide', formula: 'N₂O₄', sig: 'N:2,O:4', desc: 'A rocket propellant oxidizer. Exists in equilibrium with nitrogen dioxide.', emoji: '🚀' },
+{ id: 'n2o5', name: 'Dinitrogen Pentoxide', formula: 'N₂O₅', sig: 'N:2,O:5', desc: 'The anhydride of nitric acid. A powerful oxidizing agent used in explosives manufacture.', emoji: '💥' },
+{ id: 'p4o6', name: 'Phosphorus Trioxide', formula: 'P₄O₆', sig: 'O:6,P:4', desc: 'A waxy white solid that reacts violently with water, releasing toxic phosphine gas.', emoji: '☣️' },
+{ id: 'sio', name: 'Silicon Monoxide', formula: 'SiO', sig: 'O:1,Si:1', desc: 'An unstable brown solid used in thin-film optical coatings and semiconductors.', emoji: '💿' },
+{ id: 'al2s3', name: 'Aluminium Sulfide', formula: 'Al₂S₃', sig: 'Al:2,S:3', desc: 'A yellow solid that decomposes rapidly in water to release foul-smelling hydrogen sulfide gas.', emoji: '🤢' },
+{ id: 'na2o', name: 'Sodium Oxide', formula: 'Na₂O', sig: 'Na:2,O:1', desc: 'A white solid that reacts vigorously with water to form sodium hydroxide. Used in glass making.', emoji: '🪟' },
+{ id: 'cao', name: 'Quicklime', formula: 'CaO', sig: 'Ca:1,O:1', desc: 'Calcium oxide — produced by heating limestone. Reacts ferociously with water, releasing intense heat.', emoji: '🔥' },
+{ id: 'mgo', name: 'Magnesia', formula: 'MgO', sig: 'Mg:1,O:1', desc: 'Magnesium oxide — a white powder used in refractory materials, antacids, and fertilizers.', emoji: '🤍' },
+{ id: 'fe2o3_black', name: 'Iron(II,III) Oxide', formula: 'Fe₃O₄', sig: 'Fe:3,O:4', desc: 'Black iron oxide — the mineral magnetite. The most magnetic naturally occurring mineral.', emoji: '🧲' },
+
+// Hydrides & hydrogen compounds
+{ id: 'h2s', name: 'Hydrogen Sulfide', formula: 'H₂S', sig: 'H:2,S:1', desc: 'The rotten-egg gas. Toxic and flammable, it occurs naturally in volcanic gases and swamps.', emoji: '🥚' },
+{ id: 'ph3', name: 'Phosphine', formula: 'PH₃', sig: 'H:3,P:1', desc: 'A colorless, flammable, highly toxic gas with a smell of garlic or rotting fish.', emoji: '🧄' },
+{ id: 'sih4', name: 'Silane', formula: 'SiH₄', sig: 'H:4,Si:1', desc: 'The silicon analogue of methane. Spontaneously ignites in air, used in semiconductor fabrication.', emoji: '💻' },
+{ id: 'nah', name: 'Sodium Hydride', formula: 'NaH', sig: 'H:1,Na:1', desc: 'A powerful base used in organic synthesis. Reacts violently with water to release hydrogen gas.', emoji: '⚡' },
+{ id: 'cah2', name: 'Calcium Hydride', formula: 'CaH₂', sig: 'Ca:1,H:2', desc: 'A grey powder used as a desiccant and hydrogen source. Reacts readily with water.', emoji: '🌊' },
+{ id: 'lih', name: 'Lithium Hydride', formula: 'LiH', sig: 'H:1,Li:1', desc: 'Used as a lightweight hydrogen storage material and a component in thermonuclear weapons.', emoji: '☢️' },
+{ id: 'alf3', name: 'Aluminium Fluoride', formula: 'AlF₃', sig: 'Al:1,F:3', desc: 'A white solid used as a flux in aluminium smelting and in the production of ceramics.', emoji: '⚗️' },
+
+// Lithium & sodium compounds
+{ id: 'li2o', name: 'Lithium Oxide', formula: 'Li₂O', sig: 'Li:2,O:1', desc: 'Used as a flux in ceramics and as a component in lithium-ion battery electrolytes.', emoji: '🔋' },
+{ id: 'licl', name: 'Lithium Chloride', formula: 'LiCl', sig: 'Cl:1,Li:1', desc: 'A highly hygroscopic salt used in air conditioning systems and as a flux for soldering aluminium.', emoji: '❄️' },
+{ id: 'lioh', name: 'Lithium Hydroxide', formula: 'LiOH', sig: 'H:1,Li:1,O:1', desc: 'Used in spacecraft and submarines to scrub carbon dioxide from the air.', emoji: '🛸' },
+{ id: 'na2co3', name: 'Washing Soda', formula: 'Na₂CO₃', sig: 'C:1,Na:2,O:3', desc: 'Sodium carbonate — a common water softener and cleaning agent. Also used to make glass.', emoji: '🫧' },
+{ id: 'na2so4', name: 'Sodium Sulfate', formula: 'Na₂SO₄', sig: 'Na:2,O:4,S:1', desc: 'Known as Glauber\'s salt, used as a laxative in the 17th century and now in detergents.', emoji: '🧺' },
+{ id: 'nacn', name: 'Sodium Cyanide', formula: 'NaCN', sig: 'C:1,Na:1,N:1', desc: 'An extremely toxic salt used in gold mining and electroplating. Smells of bitter almonds.', emoji: '☠️' },
+{ id: 'naf', name: 'Sodium Fluoride', formula: 'NaF', sig: 'F:1,Na:1', desc: 'Added to toothpaste and drinking water to prevent tooth decay. Toxic in large doses.', emoji: '🦷' },
+{ id: 'na2s', name: 'Sodium Sulfide', formula: 'Na₂S', sig: 'Na:2,S:1', desc: 'A yellow solid used in paper pulping, textile dyeing, and water treatment.', emoji: '📄' },
+
+// Potassium & calcium compounds
+{ id: 'kcl', name: 'Potassium Chloride', formula: 'KCl', sig: 'Cl:1,K:1', desc: 'A salt used as a fertilizer, in food as a sodium substitute, and in lethal injection protocols.', emoji: '🌾' },
+{ id: 'koh', name: 'Potassium Hydroxide', formula: 'KOH', sig: 'H:1,K:1,O:1', desc: 'Caustic potash — a strong base used in soap making, batteries, and as a food additive (E525).', emoji: '🔋' },
+{ id: 'k2o', name: 'Potassium Oxide', formula: 'K₂O', sig: 'K:2,O:1', desc: 'A pale yellow solid that reacts violently with water. Used in fertilizers and glass manufacture.', emoji: '🌿' },
+{ id: 'k2co3', name: 'Potash', formula: 'K₂CO₃', sig: 'C:1,K:2,O:3', desc: 'One of the oldest industrial chemicals, extracted from wood ash. Essential for making glass and soap.', emoji: '🪵' },
+{ id: 'ca3p2', name: 'Calcium Phosphide', formula: 'Ca₃P₂', sig: 'Ca:3,P:2', desc: 'Reacts with water to release phosphine gas. Used as a rodenticide and in signal flares.', emoji: '🐀' },
+{ id: 'caF2', name: 'Fluorite', formula: 'CaF₂', sig: 'Ca:1,F:2', desc: 'A colourful mineral that glows under ultraviolet light — the origin of the word "fluorescence".', emoji: '🌈' },
+
+// Carbon chemistry
+{ id: 'hcn', name: 'Hydrogen Cyanide', formula: 'HCN', sig: 'C:1,H:1,N:1', desc: 'Extremely poisonous, colorless liquid or gas with a faint bitter almond odor.', emoji: '💀' },
+{ id: 'carbonyl', name: 'Carbonyl Sulfide', formula: 'COS', sig: 'C:1,O:1,S:1', desc: 'The most abundant sulfur compound in the atmosphere, naturally released by volcanoes and oceans.', emoji: '🌋' },
+{ id: 'phosgene', name: 'Phosgene', formula: 'COCl₂', sig: 'C:1,Cl:2,O:1', desc: 'A colorless gas smelling of freshly cut hay. A deadly chemical weapon used in WWI.', emoji: '⚔️' },
+{ id: 'cs2_2', name: 'Carbon Disulfide', formula: 'CS₂', sig: 'C:1,S:2', desc: 'A volatile, flammable liquid solvent with a foul smell. Used to make rayon and cellophane.', emoji: '🧵' },
+{ id: 'c2n2', name: 'Cyanogen', formula: 'C₂N₂', sig: 'C:2,N:2', desc: 'A toxic, flammable gas that burns with a distinctive purple flame. A pseudo-halogen.', emoji: '🔮' },
+{ id: 'acetylene', name: 'Acetylene', formula: 'C₂H₂', sig: 'C:2,H:2', desc: 'A highly flammable gas burned in oxyacetylene welding torches. The simplest alkyne.', emoji: '🔧' },
+{ id: 'toluene', name: 'Toluene', formula: 'C₇H₈', sig: 'C:7,H:8', desc: 'An aromatic solvent found in paint thinners and glue. The starting material for TNT.', emoji: '🎨' },
+{ id: 'naphthalene', name: 'Naphthalene', formula: 'C₁₀H₈', sig: 'C:10,H:8', desc: 'The active ingredient in old-fashioned mothballs. Has a distinctive, pungent odour.', emoji: '🦋' },
+{ id: 'oxalic', name: 'Oxalic Acid', formula: 'C₂H₂O₄', sig: 'C:2,H:2,O:4', desc: 'Found in rhubarb and spinach. Used as a wood bleach and to remove rust stains.', emoji: '🌿' },
+{ id: 'lactic', name: 'Lactic Acid', formula: 'C₃H₆O₃', sig: 'C:3,H:6,O:3', desc: 'Produced by muscles during intense exercise. Also responsible for the sour taste in yoghurt.', emoji: '🏃' },
+{ id: 'citric', name: 'Citric Acid', formula: 'C₆H₈O₇', sig: 'C:6,H:8,O:7', desc: 'Responsible for the sharp taste of lemons and limes. A natural preservative in food and drinks.', emoji: '🍋' },
+{ id: 'sucrose', name: 'Sucrose', formula: 'C₁₂H₂₂O₁₁', sig: 'C:12,H:22,O:11', desc: 'Table sugar — extracted from sugar cane and beet. The most common dietary carbohydrate.', emoji: '🍭' },
+{ id: 'caffeine', name: 'Caffeine', formula: 'C₈H₁₀N₄O₂', sig: 'C:8,H:10,N:4,O:2', desc: 'The world\'s most widely consumed psychoactive substance. Found in coffee, tea, and cola.', emoji: '☕' },
+{ id: 'cholesterol', name: 'Cholesterol', formula: 'C₂₇H₄₆O', sig: 'C:27,H:46,O:1', desc: 'A waxy lipid essential for cell membranes and hormone synthesis. The villain of heart health debates.', emoji: '🫀' },
+
+// Metal compounds
+{ id: 'fecl3', name: 'Iron(III) Chloride', formula: 'FeCl₃', sig: 'Cl:3,Fe:1', desc: 'A dark reddish-brown solid used in water treatment, circuit board etching, and as a mordant in dyeing.', emoji: '🖨️' },
+{ id: 'cucl2', name: 'Copper Chloride', formula: 'CuCl₂', sig: 'Cl:2,Cu:1', desc: 'A blue-green solid used as a pigment, catalyst, and to colour flames green in pyrotechnics.', emoji: '🎆' },
+{ id: 'cuso4', name: 'Copper Sulfate', formula: 'CuSO₄', sig: 'Cu:1,O:4,S:1', desc: 'Bright blue crystals used as a fungicide, in swimming pools, and to demonstrate crystallisation in labs.', emoji: '💙' },
+{ id: 'agcl', name: 'Silver Chloride', formula: 'AgCl', sig: 'Ag:1,Cl:1', desc: 'A white solid that darkens on exposure to light — the basis of traditional photographic film.', emoji: '📷' },
+{ id: 'aucl3', name: 'Gold Chloride', formula: 'AuCl₃', sig: 'Au:1,Cl:3', desc: 'A red-gold solid used in photography toning, to produce ruby glass, and in nanotechnology.', emoji: '🔴' },
+{ id: 'al2sio5', name: 'Aluminium Silicate', formula: 'Al₂SiO₅', sig: 'Al:2,O:5,Si:1', desc: 'Found in clay minerals, porcelain, and kyanite gemstones. A key component of ceramics.', emoji: '🏺' },
+// Fluorine & chlorine compounds
+{ id: 'hf2', name: 'Fluorine Gas', formula: 'F₂', sig: 'F:2', desc: 'The most reactive and electronegative element. A pale yellow gas that corrodes almost every material it touches.', emoji: '☣️' },
+{ id: 'clf3', name: 'Chlorine Trifluoride', formula: 'ClF₃', sig: 'Cl:1,F:3', desc: 'So reactive it sets fire to sand, glass, and asbestos. Used in nuclear fuel reprocessing.', emoji: '🔥' },
+{ id: 'nf3', name: 'Nitrogen Trifluoride', formula: 'NF₃', sig: 'F:3,N:1', desc: 'A greenhouse gas 17,000 times more potent than CO₂. Used to clean LCD and solar panel manufacturing chambers.', emoji: '🌡️' },
+{ id: 'sf6', name: 'Sulfur Hexafluoride', formula: 'SF₆', sig: 'F:6,S:1', desc: 'An extremely dense, non-toxic gas. Inhaling it makes your voice go very deep — the opposite of helium.', emoji: '🎙️' },
+{ id: 'pcl5', name: 'Phosphorus Pentachloride', formula: 'PCl₅', sig: 'Cl:5,P:1', desc: 'A yellowish-white solid used as a chlorinating agent in organic synthesis and pharmaceutical production.', emoji: '💊' },
+{ id: 'pcl3', name: 'Phosphorus Trichloride', formula: 'PCl₃', sig: 'Cl:3,P:1', desc: 'A toxic, fuming liquid used to make pesticides, flame retardants, and nerve agents.', emoji: '🐛' },
+{ id: 'socl2', name: 'Thionyl Chloride', formula: 'SOCl₂', sig: 'Cl:2,O:1,S:1', desc: 'A reactive liquid used in organic chemistry to convert carboxylic acids into acid chlorides.', emoji: '⚗️' },
+{ id: 'ccl4', name: 'Carbon Tetrachloride', formula: 'CCl₄', sig: 'C:1,Cl:4', desc: 'Once used in fire extinguishers and dry cleaning. Now banned due to its ozone-depleting and carcinogenic properties.', emoji: '🧯' },
+{ id: 'chcl3', name: 'Chloroform', formula: 'CHCl₃', sig: 'C:1,H:1,Cl:3', desc: 'A sweet-smelling solvent once used as an anaesthetic. Now infamous from detective fiction.', emoji: '😴' },
+{ id: 'ch2cl2', name: 'Dichloromethane', formula: 'CH₂Cl₂', sig: 'C:1,H:2,Cl:2', desc: 'A volatile solvent widely used in paint strippers, pharmaceutical manufacturing, and decaffeinating coffee.', emoji: '☕' },
+
+// Phosphorus compounds
+{ id: 'h3po3', name: 'Phosphorous Acid', formula: 'H₃PO₃', sig: 'H:3,O:3,P:1', desc: 'A diprotic acid used as a reducing agent and in making phosphonate pesticides.', emoji: '🌱' },
+{ id: 'p4s3', name: 'Phosphorus Sesquisulfide', formula: 'P₄S₃', sig: 'P:4,S:3', desc: 'The compound in the heads of strike-anywhere matches. Ignites by friction.', emoji: '🔥' },
+{ id: 'pf5', name: 'Phosphorus Pentafluoride', formula: 'PF₅', sig: 'F:5,P:1', desc: 'A colourless, toxic gas that fumes in moist air. Used as a Lewis acid catalyst in chemical synthesis.', emoji: '🧪' },
+{ id: 'na3po4', name: 'Trisodium Phosphate', formula: 'Na₃PO₄', sig: 'Na:3,O:4,P:1', desc: 'A heavy-duty cleaning agent and food additive (E339). Formerly used in laundry detergents.', emoji: '🧹' },
+{ id: 'ca3po42', name: 'Calcium Phosphate', formula: 'Ca₃(PO₄)₂', sig: 'Ca:3,O:8,P:2', desc: 'The main mineral component of bones and teeth. Also used as a food additive and fertilizer.', emoji: '🦴' },
+
+// Silicon compounds
+{ id: 'na2sio3', name: 'Sodium Silicate', formula: 'Na₂SiO₃', sig: 'Na:2,O:3,Si:1', desc: 'Water glass — used as a sealant, adhesive, and egg preservative. Creates the "silica garden" reaction.', emoji: '🌊' },
+{ id: 'sicl4', name: 'Silicon Tetrachloride', formula: 'SiCl₄', sig: 'Cl:4,Si:1', desc: 'A colourless fuming liquid used to make high-purity silicon for semiconductors and optical fibres.', emoji: '💡' },
+{ id: 'si3n4', name: 'Silicon Nitride', formula: 'Si₃N₄', sig: 'N:4,Si:3', desc: 'An exceptionally hard ceramic used in engine parts, ball bearings, and cutting tools.', emoji: '⚙️' },
+{ id: 'mgsiо3', name: 'Magnesium Silicate', formula: 'MgSiO₃', sig: 'Mg:1,O:3,Si:1', desc: 'The mineral enstatite — found in meteorites and the Earth\'s mantle. Also the basis of talcum powder.', emoji: '🪐' },
+
+// Sulfur compounds
+{ id: 'sf4', name: 'Sulfur Tetrafluoride', formula: 'SF₄', sig: 'F:4,S:1', desc: 'A toxic gas used as a fluorinating agent in organic synthesis. Hydrolyses instantly in moist air.', emoji: '💨' },
+{ id: 'h2so3', name: 'Sulfurous Acid', formula: 'H₂SO₃', sig: 'H:2,O:3,S:1', desc: 'A weak acid formed when SO₂ dissolves in water. Responsible for acid rain damage to buildings.', emoji: '🌧️' },
+{ id: 'na2so3', name: 'Sodium Sulfite', formula: 'Na₂SO₃', sig: 'Na:2,O:3,S:1', desc: 'A food preservative (E221) and photographic developer chemical. Also used to remove chlorine from water.', emoji: '📸' },
+{ id: 'fes', name: 'Iron Sulfide', formula: 'FeS', sig: 'Fe:1,S:1', desc: 'A black mineral found in meteorites. Reacts with acid to produce hydrogen sulfide — the rotten-egg smell.', emoji: '🌑' },
+{ id: 'pbs', name: 'Lead Sulfide', formula: 'PbS', sig: 'P:1,S:1', desc: 'The mineral galena — the primary ore of lead. One of the earliest materials used as a semiconductor.', emoji: '🪨' },
+{ id: 'cus2', name: 'Copper Disulfide', formula: 'CuS₂', sig: 'Cu:1,S:2', desc: 'Found in the mineral villamaninite. Used in photovoltaic cells and as a lubricant additive.', emoji: '☀️' },
+{ id: 'k2s', name: 'Potassium Sulfide', formula: 'K₂S', sig: 'K:2,S:1', desc: 'A yellow solid that smells of rotten eggs. Used in the synthesis of other sulfur compounds.', emoji: '🟡' },
+{ id: 'mgs', name: 'Magnesium Sulfide', formula: 'MgS', sig: 'Mg:1,S:1', desc: 'A white crystalline solid that reacts with water. Found naturally in meteorites.', emoji: '☄️' },
+
+// Nitrogen organics
+{ id: 'methylamine', name: 'Methylamine', formula: 'CH₅N', sig: 'C:1,H:5,N:1', desc: 'A colourless gas with a fishy smell. A building block in pharmaceuticals — and notoriously in Breaking Bad.', emoji: '🎭' },
+{ id: 'aniline', name: 'Aniline', formula: 'C₆H₇N', sig: 'C:6,H:7,N:1', desc: 'The starting material for hundreds of synthetic dyes. Its discovery in coal tar launched the modern chemical industry.', emoji: '🎨' },
+{ id: 'pyridine', name: 'Pyridine', formula: 'C₅H₅N', sig: 'C:5,H:5,N:1', desc: 'A basic heterocyclic compound with a sharp, unpleasant odour. Added to ethanol to make it undrinkable.', emoji: '🚫' },
+{ id: 'alanine', name: 'Alanine', formula: 'C₃H₇NO₂', sig: 'C:3,H:7,N:1,O:2', desc: 'One of the simplest amino acids, used by the body to build proteins and generate glucose.', emoji: '🧬' },
+{ id: 'glycine', name: 'Glycine', formula: 'C₂H₅NO₂', sig: 'C:2,H:5,N:1,O:2', desc: 'The simplest amino acid. A key neurotransmitter in the spinal cord and a sweetener in food.', emoji: '🍬' },
+{ id: 'tnt', name: 'TNT', formula: 'C₇H₅N₃O₆', sig: 'C:7,H:5,N:3,O:6', desc: 'Trinitrotoluene — the benchmark explosive. One tonne of TNT defines a standard unit of explosive energy.', emoji: '💣' },
+{ id: 'nitroglycerin', name: 'Nitroglycerin', formula: 'C₃H₅N₃O₉', sig: 'C:3,H:5,N:3,O:9', desc: 'An extremely shock-sensitive explosive. Stabilised in dynamite by Alfred Nobel, who later founded the Nobel Prize.', emoji: '🏆' },
+{ id: 'nylon', name: 'Nylon Monomer (Caprolactam)', formula: 'C₆H₁₁NO', sig: 'C:6,H:11,N:1,O:1', desc: 'The building block of nylon — the first fully synthetic fibre, launched in 1938 as toothbrush bristles.', emoji: '🪥' },
+
+// Organics & solvents
+{ id: 'diethylether', name: 'Diethyl Ether', formula: 'C₄H₁₀O', sig: 'C:4,H:10,O:1', desc: 'A highly flammable solvent once used as an anaesthetic. Has a characteristic sweet smell.', emoji: '😷' },
+{ id: 'thf', name: 'Tetrahydrofuran', formula: 'C₄H₈O', sig: 'C:4,H:8,O:1', desc: 'A versatile cyclic ether used as a solvent in polymer chemistry and pharmaceutical synthesis.', emoji: '🔄' },
+{ id: 'styrene', name: 'Styrene', formula: 'C₈H₈', sig: 'C:8,H:8', desc: 'A liquid monomer that polymerises into polystyrene. Found naturally in cinnamon and coffee.', emoji: '☕' },
+{ id: 'phenol', name: 'Phenol', formula: 'C₆H₆O', sig: 'C:6,H:6,O:1', desc: 'The first antiseptic used in surgery by Joseph Lister. Now a key feedstock for plastics like Bakelite.', emoji: '🏥' },
+{ id: 'furfural', name: 'Furfural', formula: 'C₅H₄O₂', sig: 'C:5,H:4,O:2', desc: 'An aromatic liquid derived from agricultural waste like oat hulls. Used as a solvent and in making plastics.', emoji: '🌾' },
+{ id: 'maleic', name: 'Maleic Acid', formula: 'C₄H₄O₄', sig: 'C:4,H:4,O:4', desc: 'Used to make resins, plastics, and food additives. An isomer of fumaric acid found in many fruits.', emoji: '🍊' },
+{ id: 'tartaric', name: 'Tartaric Acid', formula: 'C₄H₆O₆', sig: 'C:4,H:6,O:6', desc: 'Occurs naturally in grapes and gives wine its tart taste. Used in baking powder as cream of tartar.', emoji: '🍇' },
+{ id: 'ibuprofen', name: 'Ibuprofen', formula: 'C₁₃H₁₈O₂', sig: 'C:13,H:18,O:2', desc: 'A widely used anti-inflammatory painkiller. One of the best-selling drugs in the world.', emoji: '💊' },
+{ id: 'paracetamol', name: 'Paracetamol', formula: 'C₈H₉NO₂', sig: 'C:8,H:9,N:1,O:2', desc: 'The most commonly used painkiller globally. Known as acetaminophen in North America.', emoji: '🤒' },
+{ id: 'vanillin', name: 'Vanillin', formula: 'C₈H₈O₃', sig: 'C:8,H:8,O:3', desc: 'The primary component of vanilla bean extract. Most vanillin today is synthesised from wood pulp.', emoji: '🍦' },
+{ id: 'menthol', name: 'Menthol', formula: 'C₁₀H₂₀O', sig: 'C:10,H:20,O:1', desc: 'Extracted from peppermint oil. Triggers cold-sensitive receptors giving a cooling sensation without actually lowering temperature.', emoji: '🌿' },
+{ id: 'camphor', name: 'Camphor', formula: 'C₁₀H₁₆O', sig: 'C:10,H:16,O:1', desc: 'A waxy, strongly scented substance used in mothballs, embalming fluid, and traditional medicine.', emoji: '🕯️' },
+{ id: 'thymol', name: 'Thymol', formula: 'C₁₀H₁₄O', sig: 'C:10,H:14,O:1', desc: 'The main component of thyme oil. Used as an antiseptic in mouthwashes like Listerine.', emoji: '🦷' },
+{ id: 'carvone', name: 'Carvone', formula: 'C₁₀H₁₄O', sig: 'C:10,H:14,O:1', desc: 'Exists in two mirror-image forms: one smells of spearmint, the other of caraway seeds.', emoji: '🌱' },
+
+// Exotic & interstellar
+{ id: 'b2h6', name: 'Diborane', formula: 'B₂H₆', sig: 'B:2,H:6', desc: 'A highly toxic, spontaneously flammable gas. Has an unusual three-centre two-electron bond structure.', emoji: '🔬' },
+{ id: 'xe2f2', name: 'Xenon Difluoride', formula: 'XeF₂', sig: 'F:2,Xe:1', desc: 'One of the few noble gas compounds. A white crystalline solid used to etch silicon in chip manufacturing.', emoji: '💎' },
+{ id: 'of2', name: 'Oxygen Difluoride', formula: 'OF₂', sig: 'F:2,O:1', desc: 'One of the only compounds where oxygen has a +2 oxidation state. Extremely reactive and toxic.', emoji: '⚠️' },
+{ id: 'n2f4', name: 'Tetrafluorohydrazine', formula: 'N₂F₄', sig: 'F:4,N:2', desc: 'A colourless gas used as a high-energy oxidiser in rocket propellants.', emoji: '🚀' },
+{ id: 'if5', name: 'Iodine Pentafluoride', formula: 'IF₅', sig: 'F:5,I:1', desc: 'A colourless fuming liquid that reacts violently with water and organic materials.', emoji: '💧' },
+// Boron compounds
+{ id: 'boric', name: 'Boric Acid', formula: 'H₃BO₃', sig: 'B:1,H:3,O:3', desc: 'A mild antiseptic used in eyewash solutions and as an insecticide against cockroaches and ants.', emoji: '👁️' },
+{ id: 'b2o3', name: 'Boron Trioxide', formula: 'B₂O₃', sig: 'B:2,O:3', desc: 'A glassy solid that is the primary component of borosilicate glass used in laboratory equipment and Pyrex cookware.', emoji: '🔬' },
+{ id: 'bcl3', name: 'Boron Trichloride', formula: 'BCl₃', sig: 'B:1,Cl:3', desc: 'A colourless toxic gas used as a dopant in semiconductor manufacturing and as a catalyst in organic synthesis.', emoji: '💻' },
+{ id: 'bf3', name: 'Boron Trifluoride', formula: 'BF₃', sig: 'B:1,F:3', desc: 'A pungent, toxic gas and powerful Lewis acid. One of the most widely used catalysts in industrial chemistry.', emoji: '⚗️' },
+{ id: 'nabh4', name: 'Sodium Borohydride', formula: 'NaBH₄', sig: 'B:1,H:4,Na:1', desc: 'A mild, selective reducing agent widely used in pharmaceutical synthesis to convert ketones into alcohols.', emoji: '💊' },
+{ id: 'na2b4o7', name: 'Borax', formula: 'Na₂B₄O₇', sig: 'B:4,Na:2,O:7', desc: 'A naturally occurring mineral used as a laundry booster, hand soap, and famously to make slime.', emoji: '🫧' },
+
+// Aluminium compounds  
+{ id: 'alcl3', name: 'Aluminium Chloride', formula: 'AlCl₃', sig: 'Al:1,Cl:3', desc: 'A powerful Lewis acid catalyst used in the Friedel-Crafts reaction — a cornerstone of organic chemistry.', emoji: '⚗️' },
+{ id: 'al_oh_3', name: 'Aluminium Hydroxide', formula: 'Al(OH)₃', sig: 'Al:1,H:3,O:3', desc: 'The active ingredient in antacid tablets. Also used as a flame retardant in plastics and carpets.', emoji: '🔥' },
+{ id: 'aln', name: 'Aluminium Nitride', formula: 'AlN', sig: 'Al:1,N:1', desc: 'An extremely hard ceramic with excellent thermal conductivity. Used as a heat sink in electronic devices.', emoji: '💡' },
+{ id: 'alp', name: 'Aluminium Phosphide', formula: 'AlP', sig: 'Al:1,P:1', desc: 'A dark grey solid that releases toxic phosphine gas on contact with moisture. Used as a grain fumigant.', emoji: '🌾' },
+
+// Magnesium compounds
+{ id: 'mgcl2', name: 'Magnesium Chloride', formula: 'MgCl₂', sig: 'Cl:2,Mg:1', desc: 'Extracted from seawater and used to de-ice roads, as a dietary supplement, and to make tofu coagulate.', emoji: '🍱' },
+{ id: 'mgco3', name: 'Magnesium Carbonate', formula: 'MgCO₃', sig: 'C:1,Mg:1,O:3', desc: 'A white powder used by gymnasts and rock climbers to improve grip. Also an antacid.', emoji: '🧗' },
+{ id: 'mg3n2', name: 'Magnesium Nitride', formula: 'Mg₃N₂', sig: 'Mg:3,N:2', desc: 'A greenish-yellow powder formed when magnesium burns in nitrogen. Reacts with water to release ammonia.', emoji: '✨' },
+{ id: 'mgf2', name: 'Magnesium Fluoride', formula: 'MgF₂', sig: 'F:2,Mg:1', desc: 'A transparent crystal used as an anti-reflective coating on camera lenses and optical instruments.', emoji: '📷' },
+
+// Iron & heavy metal compounds
+{ id: 'fecl2', name: 'Iron(II) Chloride', formula: 'FeCl₂', sig: 'Cl:2,Fe:1', desc: 'A pale green solid used in wastewater treatment and as a precursor to other iron compounds.', emoji: '💧' },
+{ id: 'fe_oh_3', name: 'Iron(III) Hydroxide', formula: 'Fe(OH)₃', sig: 'Fe:1,H:3,O:3', desc: 'A reddish-brown gelatinous precipitate — the immediate precursor to rust. Forms when iron reacts with water and oxygen.', emoji: '🟤' },
+{ id: 'feco3', name: 'Siderite', formula: 'FeCO₃', sig: 'C:1,Fe:1,O:3', desc: 'A pale yellow-brown iron carbonate mineral and important iron ore. Forms in sedimentary environments.', emoji: '🪨' },
+{ id: 'fe2s3', name: 'Iron(III) Sulfide', formula: 'Fe₂S₃', sig: 'Fe:2,S:3', desc: 'An unstable black solid that decomposes readily. Distinct from iron pyrite which has a brassy gold colour.', emoji: '⚫' },
+{ id: 'cu2s', name: 'Chalcocite', formula: 'Cu₂S', sig: 'Cu:2,S:1', desc: 'A dark lead-grey ore of copper and one of the most profitable copper minerals to mine.', emoji: '⛏️' },
+{ id: 'cuco3', name: 'Copper Carbonate', formula: 'CuCO₃', sig: 'C:1,Cu:1,O:3', desc: 'Responsible for the green patina on copper roofs and the Statue of Liberty. Used as a pigment since antiquity.', emoji: '🗽' },
+{ id: 'cu_oh_2', name: 'Copper Hydroxide', formula: 'Cu(OH)₂', sig: 'Cu:1,H:2,O:2', desc: 'A pale blue solid used as a fungicide on crops and as a pigment. Known as Bordeaux mixture when mixed with lime.', emoji: '🍇' },
+{ id: 'ag2s', name: 'Silver Sulfide', formula: 'Ag₂S', sig: 'Ag:2,S:1', desc: 'The black tarnish that forms on silverware. The most stable silver compound and a minor silver ore.', emoji: '🥄' },
+{ id: 'ag2o', name: 'Silver Oxide', formula: 'Ag₂O', sig: 'Ag:2,O:1', desc: 'A dark brown powder used in silver oxide batteries — the kind found in watches and hearing aids.', emoji: '⌚' },
+{ id: 'agf', name: 'Silver Fluoride', formula: 'AgF', sig: 'Ag:1,F:1', desc: 'Unlike most silver compounds, this one is water-soluble. Used in dentistry to halt tooth decay without drilling.', emoji: '🦷' },
+{ id: 'au_cn_2', name: 'Gold Cyanide', formula: 'AuCN', sig: 'Au:1,C:1,N:1', desc: 'Used in gold electroplating to deposit thin layers of gold onto jewellery and electronic contacts.', emoji: '💍' },
+{ id: 'aucl', name: 'Gold(I) Chloride', formula: 'AuCl', sig: 'Au:1,Cl:1', desc: 'A yellow solid used as a catalyst in organic reactions and as a precursor to other gold compounds.', emoji: '🟡' },
+
+// Potassium & sodium advanced
+{ id: 'ki', name: 'Potassium Iodide', formula: 'KI', sig: 'K:1,I:1', desc: 'Given to populations near nuclear accidents to protect the thyroid gland. Also added to table salt to prevent goitre.', emoji: '☢️' },
+{ id: 'kmno4', name: 'Potassium Permanganate', formula: 'KMnO₄', sig: 'K:1,Mn:1,O:4', desc: 'Deep purple crystals used to purify water, treat fungal infections, and in spectacular chemistry demonstrations.', emoji: '💜' },
+{ id: 'kcn', name: 'Potassium Cyanide', formula: 'KCN', sig: 'C:1,K:1,N:1', desc: 'An infamous rapid-acting poison used in gold mining and the favourite murder weapon of Agatha Christie.', emoji: '💀' },
+{ id: 'kf', name: 'Potassium Fluoride', formula: 'KF', sig: 'F:1,K:1', desc: 'Used as a fluorinating agent in organic synthesis and as a flux for soldering and brazing metals.', emoji: '🔧' },
+{ id: 'k2cr2o7', name: 'Potassium Dichromate', formula: 'K₂Cr₂O₇', sig: 'Cr:2,K:2,O:7', desc: 'Bright orange crystals used as an oxidising agent, in leather tanning, and historically in photography.', emoji: '🟠' },
+{ id: 'na2o2', name: 'Sodium Peroxide', formula: 'Na₂O₂', sig: 'Na:2,O:2', desc: 'A yellowish powder used in breathing apparatus and as a bleaching agent. Reacts violently with water.', emoji: '🌊' },
+{ id: 'nah2po4', name: 'Monosodium Phosphate', formula: 'NaH₂PO₄', sig: 'H:2,Na:1,O:4,P:1', desc: 'A food additive (E339) used as an emulsifier and acidity regulator in processed cheese and soft drinks.', emoji: '🧀' },
+{ id: 'na2hpo4', name: 'Disodium Phosphate', formula: 'Na₂HPO₄', sig: 'H:1,Na:2,O:4,P:1', desc: 'Used in instant puddings, pasta, and cereals to prevent coagulation. Also a laxative at high doses.', emoji: '🍝' },
+
+// Complex organics
+{ id: 'formaldehyde', name: 'Formaldehyde', formula: 'CH₂O', sig: 'C:1,H:2,O:1', desc: 'A pungent gas used to preserve biological specimens and make resins. A known human carcinogen.', emoji: '🧫' },
+{ id: 'propanol', name: 'Propanol', formula: 'C₃H₈O', sig: 'C:3,H:8,O:1', desc: 'A colourless alcohol used as a solvent and antiseptic. The active ingredient in many hand sanitisers.', emoji: '🖐️' },
+{ id: 'butanol', name: 'Butanol', formula: 'C₄H₁₀O', sig: 'C:4,H:10,O:1', desc: 'A four-carbon alcohol used as a solvent and potential biofuel. Has a characteristic banana-like smell.', emoji: '🍌' },
+{ id: 'pentane', name: 'Pentane', formula: 'C₅H₁₂', sig: 'C:5,H:12', desc: 'A highly volatile hydrocarbon used as a blowing agent to make polystyrene foam and as a lab solvent.', emoji: '🫧' },
+{ id: 'cyclopentane', name: 'Cyclopentane', formula: 'C₅H₁₀', sig: 'C:5,H:10', desc: 'A ring-shaped hydrocarbon used as a blowing agent in refrigerator insulation foam. Low global warming potential.', emoji: '❄️' },
+{ id: 'cyclohexane', name: 'Cyclohexane', formula: 'C₆H₁₂', sig: 'C:6,H:12', desc: 'A ring-shaped hydrocarbon and key industrial solvent. The precursor to nylon via adipic acid production.', emoji: '🪢' },
+{ id: 'methylcyclohexane', name: 'Methylcyclohexane', formula: 'C₇H₁₄', sig: 'C:7,H:14', desc: 'A colourless liquid hydrocarbon used as a solvent and as a hydrogen carrier in fuel cell research.', emoji: '🔋' },
+{ id: 'xylene', name: 'Xylene', formula: 'C₈H₁₀', sig: 'C:8,H:10', desc: 'A widely used industrial solvent found in paint thinners. One of the top 30 most produced chemicals globally.', emoji: '🎨' },
+{ id: 'cumene', name: 'Cumene', formula: 'C₉H₁₂', sig: 'C:9,H:12', desc: 'Almost all world production is used to make phenol and acetone via the cumene process.', emoji: '⚗️' },
+{ id: 'decane', name: 'Decane', formula: 'C₁₀H₂₂', sig: 'C:10,H:22', desc: 'A ten-carbon alkane and significant component of jet fuel and diesel. A standard reference fuel.', emoji: '✈️' },
+{ id: 'propionic', name: 'Propionic Acid', formula: 'C₃H₆O₂', sig: 'C:3,H:6,O:2', desc: 'Responsible for the smell of Swiss cheese and human sweat. Used as a food preservative (E280).', emoji: '🧀' },
+{ id: 'butyric', name: 'Butyric Acid', formula: 'C₄H₈O₂', sig: 'C:4,H:8,O:2', desc: 'The compound responsible for the smell of rancid butter and vomit. Also produced in the human gut by bacteria.', emoji: '🤢' },
+{ id: 'caprylic', name: 'Caprylic Acid', formula: 'C₈H₁₆O₂', sig: 'C:8,H:16,O:2', desc: 'Found in coconut oil and human breast milk. Has antimicrobial properties and a slightly goat-like smell.', emoji: '🥥' },
+{ id: 'benzoic', name: 'Benzoic Acid', formula: 'C₇H₆O₂', sig: 'C:7,H:6,O:2', desc: 'The simplest aromatic acid. Used as a food preservative (E210) and as a starting material for aspirin.', emoji: '🍓' },
+{ id: 'salicylic', name: 'Salicylic Acid', formula: 'C₇H₆O₃', sig: 'C:7,H:6,O:3', desc: 'A beta-hydroxy acid used to treat acne, psoriasis, and warts. The direct precursor to aspirin.', emoji: '✨' },
+{ id: 'malic', name: 'Malic Acid', formula: 'C₄H₆O₅', sig: 'C:4,H:6,O:5', desc: 'Responsible for the sour taste in apples and the tart coating on sour candy. Used in winemaking.', emoji: '🍎' },
+{ id: 'glutamic', name: 'Glutamic Acid', formula: 'C₅H₉NO₄', sig: 'C:5,H:9,N:1,O:4', desc: 'An amino acid whose sodium salt is MSG. It is the primary source of the umami taste sensation.', emoji: '🍜' },
+{ id: 'tryptophan', name: 'Tryptophan', formula: 'C₁₁H₁₂N₂O₂', sig: 'C:11,H:12,N:2,O:2', desc: 'An essential amino acid and precursor to serotonin. Blamed (unfairly) for post-Thanksgiving sleepiness.', emoji: '🦃' },
+{ id: 'phenylalanine', name: 'Phenylalanine', formula: 'C₉H₁₁NO₂', sig: 'C:9,H:11,N:1,O:2', desc: 'An essential amino acid and the precursor to dopamine. The reason diet drinks carry a phenylketonuria warning.', emoji: '🥤' },
+{ id: 'dopamine', name: 'Dopamine', formula: 'C₈H₁₁NO₂', sig: 'C:8,H:11,N:1,O:2', desc: 'The brain\'s reward neurotransmitter. Released during pleasurable activities including — perhaps — discovering compounds.', emoji: '🧠' },
+{ id: 'serotonin', name: 'Serotonin', formula: 'C₁₀H₁₂N₂O', sig: 'C:10,H:12,N:2,O:1', desc: 'The "feel-good" neurotransmitter regulating mood, sleep, and appetite. Made from tryptophan.', emoji: '😊' },
+{ id: 'adrenaline', name: 'Adrenaline', formula: 'C₉H₁₃NO₃', sig: 'C:9,H:13,N:1,O:3', desc: 'The fight-or-flight hormone released by the adrenal glands. Increases heart rate and unlocks energy reserves.', emoji: '⚡' },
+{ id: 'morphine', name: 'Morphine', formula: 'C₁₇H₁₉NO₃', sig: 'C:17,H:19,N:1,O:3', desc: 'A powerful opiate painkiller derived from the opium poppy. The benchmark against which all analgesics are measured.', emoji: '🌺' },
+{ id: 'penicillin', name: 'Penicillin G', formula: 'C₁₆H₁₈N₂O₄S', sig: 'C:16,H:18,N:2,O:4,S:1', desc: 'The first true antibiotic, discovered by Alexander Fleming in 1928. Launched the age of modern medicine.', emoji: '🍄' },
+{ id: 'vitamin_c', name: 'Vitamin C', formula: 'C₆H₈O₆', sig: 'C:6,H:8,O:6', desc: 'Ascorbic acid — essential for collagen synthesis. Deficiency causes scurvy, which devastated sailors for centuries.', emoji: '🍊' },
+{ id: 'retinol', name: 'Vitamin A', formula: 'C₂₀H₃₀O', sig: 'C:20,H:30,O:1', desc: 'Essential for vision, immune function, and skin health. Found in liver, dairy, and as beta-carotene in carrots.', emoji: '🥕' },
+{ id: 'cholecalciferol', name: 'Vitamin D3', formula: 'C₂₇H₄₄O', sig: 'C:27,H:44,O:1', desc: 'Synthesised in skin upon exposure to sunlight. Deficiency causes rickets and is linked to depression.', emoji: '☀️' },
+{ id: 'tocopherol', name: 'Vitamin E', formula: 'C₂₉H₅₀O₂', sig: 'C:29,H:50,O:2', desc: 'A fat-soluble antioxidant that protects cell membranes from oxidative damage. Found in nuts and vegetable oils.', emoji: '🥜' },
+{ id: 'dna_base_adenine', name: 'Adenine', formula: 'C₅H₅N₅', sig: 'C:5,H:5,N:5', desc: 'One of the four nucleobases of DNA. Also part of ATP — the universal energy currency of all living cells.', emoji: '🧬' },
+{ id: 'dna_base_guanine', name: 'Guanine', formula: 'C₅H₅N₅O', sig: 'C:5,H:5,N:5,O:1', desc: 'A DNA nucleobase. Pure guanine crystals give fish scales and pearl nail polish their iridescent shimmer.', emoji: '🐟' },
+{ id: 'testosterone', name: 'Testosterone', formula: 'C₁₉H₂₈O₂', sig: 'C:19,H:28,O:2', desc: 'The primary male sex hormone. Responsible for muscle development, bone density, and libido in both sexes.', emoji: '💪' },
+{ id: 'estradiol', name: 'Estradiol', formula: 'C₁₈H₂₄O₂', sig: 'C:18,H:24,O:2', desc: 'The most potent naturally occurring oestrogen. Regulates the female reproductive cycle and bone density.', emoji: '🌸' },
+{ id: 'progesterone', name: 'Progesterone', formula: 'C₂₁H₃₀O₂', sig: 'C:21,H:30,O:2', desc: 'A steroid hormone that prepares the uterus for pregnancy. The basis of most contraceptive pills.', emoji: '💛' },
+
+];
+
+// =============================================
+// SOUND ENGINE (Web Audio API — no files needed)
+// =============================================
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+let bubbleLoopNode = null;
+let bubbleGainNode = null;
+
+function getAudioCtx() {
+    if (!audioCtx) audioCtx = new AudioContext();
+    // Resume if suspended (browser autoplay policy)
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+}
+
+function playPop() {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(520, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(260, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.12);
+}
+
+function startBubbling() {
+    const ctx = getAudioCtx();
+    stopBubbling(); // prevent duplicates
+
+    bubbleGainNode = ctx.createGain();
+    bubbleGainNode.gain.setValueAtTime(0, ctx.currentTime);
+    bubbleGainNode.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.3);
+    bubbleGainNode.connect(ctx.destination);
+
+    // White noise buffer
+    const bufferSize = ctx.sampleRate * 2;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+    bubbleLoopNode = ctx.createBufferSource();
+    bubbleLoopNode.buffer = buffer;
+    bubbleLoopNode.loop = true;
+
+    // Band-pass filter to shape noise into a "bubbling" texture
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(400, ctx.currentTime);
+    filter.frequency.linearRampToValueAtTime(900, ctx.currentTime + 0.4);
+    filter.Q.value = 0.8;
+
+    bubbleLoopNode.connect(filter);
+    filter.connect(bubbleGainNode);
+    bubbleLoopNode.start();
+}
+
+function stopBubbling() {
+    if (bubbleGainNode) {
+        bubbleGainNode.gain.setValueAtTime(bubbleGainNode.gain.value, audioCtx.currentTime);
+        bubbleGainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+    }
+    if (bubbleLoopNode) {
+        try { bubbleLoopNode.stop(audioCtx.currentTime + 0.2); } catch(e) {}
+        bubbleLoopNode = null;
+    }
+    bubbleGainNode = null;
+}
+
+function playSuccess() {
+    const ctx = getAudioCtx();
+    // Three rising chime tones
+    [[0, 523.25], [0.12, 659.25], [0.24, 783.99]].forEach(([delay, freq]) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, ctx.currentTime + delay);
+        gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + delay + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.6);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.65);
+    });
+}
+
+function playFizzle() {
+    const ctx = getAudioCtx();
+
+    // Short burst of filtered noise — the "fizzle"
+    const bufferSize = ctx.sampleRate * 0.5;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 2000;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    source.start();
+    source.stop(ctx.currentTime + 0.4);
+
+    // Low descending "sad" tone underneath
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
+    osc.connect(oscGain);
+    oscGain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(280, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.4);
+    oscGain.gain.setValueAtTime(0.2, ctx.currentTime);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
+}
+// =============================================
+        // State variables
+        let currentFlask = []; // Array of element objects
+        let discovered = new Set();
+        let encyclopediaMode = false;
+        const MAX_ATOMS = 150;
+        let atomIdCounter = 0;
+
+        // DOM Elements
+        const elementsGrid = document.getElementById('elements-grid');
+        const searchInput = document.getElementById('search-elements');
+        const flaskAtomsContainer = document.getElementById('flask-atoms');
+        const currentFormulaDisplay = document.getElementById('current-formula');
+        const flaskLiquid = document.getElementById('flask-liquid');
+        const flaskBody = document.getElementById('flask-body');
+        const discoveryCountText = document.getElementById('discovery-count');
+        const discoveredList = document.getElementById('discovered-list');
+        const flaskContainer = document.getElementById('flask-container');
+        const ambientGlow = document.getElementById('ambient-glow');
+        // --- NEW CODE: Local Storage Functions ---
+        function saveProgress() {
+            localStorage.setItem('alchemyDiscoveries', JSON.stringify([...discovered]));
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('alchemyDiscoveries');
+            if (saved) {
+                discovered = new Set(JSON.parse(saved));
+            }
+        }
+        function resetProgress() {
+    if (!window.confirm('Wipe all progress and start from scratch? This cannot be undone.')) return;
+    localStorage.removeItem('alchemyDiscoveries');
+    discovered = new Set();
+    encyclopediaMode = false;
+    document.getElementById('toggle-icon-book').classList.remove('hidden');
+    document.getElementById('toggle-icon-list').classList.add('hidden');
+    document.getElementById('toggle-label').textContent = 'Encyclopedia';
+    document.getElementById('panel-title').textContent = 'Discovered';
+    clearFlask();
+    updateDiscoveryCount();
+    renderDiscoveredList();
+    try { playFizzle(); } catch(e) {}
+}
+        // -----------------------------------------
+
+        function init() {
+            loadProgress(); // <-- ADD THIS LINE
+            renderElementsGrid(elementsData);
+            updateDiscoveryCount();
+            renderDiscoveredList(); // <-- ADD THIS LINE
+            
+            searchInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = elementsData.filter(el => 
+                    el.name.toLowerCase().includes(term) || el.symbol.toLowerCase().includes(term)
+                );
+                renderElementsGrid(filtered);
+            });
+        searchInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = elementsData.filter(el => 
+                    el.name.toLowerCase().includes(term) || el.symbol.toLowerCase().includes(term)
+                );
+                renderElementsGrid(filtered);
+            });
+
+            // --- NEW CODE: Setup Drop Zone on the Flask ---
+            flaskContainer.addEventListener('dragover', (e) => {
+                e.preventDefault(); // Necessary to allow dropping
+                e.dataTransfer.dropEffect = 'copy';
+                // Add a cool blue glow when hovering over the flask
+                flaskBody.style.borderColor = 'rgba(56, 189, 248, 0.8)';
+                flaskBody.style.boxShadow = 'inset 0 0 20px rgba(255,255,255,0.05), 0 0 20px rgba(56, 189, 248, 0.4)';
+            });
+
+            flaskContainer.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                // Remove the glow when dragging away
+                flaskBody.style.borderColor = '';
+                flaskBody.style.boxShadow = '';
+            });
+
+            flaskContainer.addEventListener('drop', (e) => {
+                e.preventDefault();
+                // Remove the glow
+                flaskBody.style.borderColor = '';
+                flaskBody.style.boxShadow = '';
+                
+                // Get the symbol that was dropped
+                const droppedSymbol = e.dataTransfer.getData('text/plain');
+                
+                // Find the matching element data and add it to the flask
+                const elementData = elementsData.find(el => el.symbol === droppedSymbol);
+                if (elementData) {
+                    addElementToFlask(elementData);
+                }
+            });
+            // ----------------------------------------------
+        } // <-- This is the closing bracket for init()
+
+        function renderElementsGrid(elements) {
+            elementsGrid.innerHTML = '';
+            elements.forEach(el => {
+                const btn = document.createElement('button');
+                btn.className = `element-btn cat-${el.cat} py-3 px-1 rounded-xl flex flex-col items-center justify-center border border-white/20 shadow-md hover:shadow-lg text-white group relative overflow-hidden`;
+                
+                // CRITICAL FIX: The glow needs this to know which element is which!
+                btn.setAttribute('data-symbol', el.symbol);
+                
+                // Add a shine effect
+                const shine = document.createElement('div');
+                shine.className = 'absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300';
+                btn.appendChild(shine);
+
+                const symbol = document.createElement('span');
+                symbol.className = 'text-2xl font-bold font-mono tracking-tighter drop-shadow-md';
+                symbol.innerText = el.symbol;
+
+                const name = document.createElement('span');
+                name.className = 'text-[10px] sm:text-[11px] mt-1 font-medium opacity-90 w-full text-center whitespace-nowrap tracking-tight';
+                name.innerText = el.name;
+
+                btn.appendChild(symbol);
+                btn.appendChild(name);
+                
+                btn.onclick = () => addElementToFlask(el);
+                
+                btn.draggable = true;
+                btn.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', el.symbol);
+                    e.dataTransfer.effectAllowed = 'copy';
+                    btn.classList.add('opacity-50');
+                });
+                btn.addEventListener('dragend', () => {
+                    btn.classList.remove('opacity-50'); 
+                });
+
+                elementsGrid.appendChild(btn);
+            });
+
+            // CRITICAL FIX: Re-apply glow effects when the grid is drawn
+            if (typeof updateSynergyHighlighting === 'function') {
+                updateSynergyHighlighting();
+            }
+        }
+
+        function addElementToFlask(elementData) {
+            if (currentFlask.length >= MAX_ATOMS) {
+                flaskBody.classList.add('animate-shake');
+                setTimeout(() => flaskBody.classList.remove('animate-shake'), 500);
+                return;
+            }
+
+            const atom = { ...elementData, id: `atom-${atomIdCounter++}` };
+            currentFlask.push(atom); // Logic stays the same!
+            
+            // Check if this symbol already has a bubble in the flask
+            let existingBubble = document.querySelector(`.atom-bubble[data-flask-symbol="${elementData.symbol}"]`);
+
+            if (existingBubble) {
+                // Element already in flask! Just update the stack badge.
+                let badge = existingBubble.querySelector('.atom-badge');
+                if (!badge) {
+                    badge = document.createElement('div');
+                    badge.className = 'atom-badge animate-pop';
+                    existingBubble.appendChild(badge);
+                }
+                
+                const count = currentFlask.filter(a => a.symbol === elementData.symbol).length;
+                badge.innerText = count;
+
+                // Give it a tiny pop animation to show it was clicked
+                existingBubble.style.transform = 'scale(1.2)';
+                setTimeout(() => existingBubble.style.transform = '', 150);
+
+            } else {
+                // Element not in flask yet. Create the bubble!
+                const atomEl = document.createElement('button');
+                atomEl.className = `atom-bubble cat-${elementData.cat}`;
+                atomEl.setAttribute('aria-label', `Remove ${elementData.name} atom`);
+                atomEl.setAttribute('data-flask-symbol', elementData.symbol); // Track by symbol
+                atomEl.innerText = elementData.symbol;
+                
+                
+                const delay = Math.random() * 2;
+                atomEl.style.animation = `pop 0.3s ease-out forwards, float 3s ease-in-out ${delay}s infinite`;
+                
+                atomEl.onclick = (e) => {
+                    e.stopPropagation();
+                    removeElementBySymbol(elementData.symbol); // Call new removal function
+                };
+
+                flaskAtomsContainer.appendChild(atomEl);
+            }
+
+            updateFlaskState();
+            try { playPop(); } catch(e) {}
+            createParticles(flaskBody, 3, elementData.cat);
+        }
+
+        function removeElementBySymbol(symbol) {
+            // Find the *last* atom of this symbol added to the logic array
+            let index = -1;
+            for (let i = currentFlask.length - 1; i >= 0; i--) {
+                if (currentFlask[i].symbol === symbol) {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index > -1) {
+                currentFlask.splice(index, 1); // Remove from logic
+                
+                const existingBubble = document.querySelector(`.atom-bubble[data-flask-symbol="${symbol}"]`);
+                if (existingBubble) {
+                    const count = currentFlask.filter(a => a.symbol === symbol).length;
+                    
+                    if (count === 0) {
+                        // None left! Destroy the bubble.
+                        existingBubble.style.animation = 'pop 0.2s ease-in reverse forwards';
+                        setTimeout(() => existingBubble.remove(), 200);
+                    } else {
+                        // Still some left. Update the badge.
+                        let badge = existingBubble.querySelector('.atom-badge');
+                        if (badge) {
+                            badge.innerText = count;
+                            if (count === 1) badge.remove(); // Hide badge if only 1 left
+                        }
+                        
+                        // Give it a tiny shrink animation to show removal
+                        existingBubble.style.transform = 'scale(0.8)';
+                        setTimeout(() => existingBubble.style.transform = '', 150);
+                    }
+                }
+                updateFlaskState();
+            }
+        }
+
+        function clearFlask() {
+            if (currentFlask.length === 0) return;
+            flaskAtomsContainer.innerHTML = '';
+            currentFlask = [];
+            updateFlaskState();
+            
+            // Empty animation
+            flaskLiquid.style.height = '0%';
+            flaskBody.classList.add('animate-shake');
+            setTimeout(() => flaskBody.classList.remove('animate-shake'), 500);
+        }
+
+        function updateFlaskState() {
+            if (currentFlask.length === 0) {
+                currentFormulaDisplay.innerText = 'Empty';
+                currentFormulaDisplay.className = 'h-8 font-mono text-lg text-blue-300 tracking-wider'; 
+                flaskLiquid.style.height = '0%';
+            } else {
+                const counts = getFlaskCounts();
+                currentFormulaDisplay.innerText = generateDisplayFormula(counts);
+                currentFormulaDisplay.className = 'h-8 font-mono text-lg text-emerald-400 tracking-wider'; 
+                
+                // Update Liquid Level
+                const fillPercentage = Math.min((currentFlask.length / 10) * 100, 95);
+                flaskLiquid.style.height = `${fillPercentage}%`;
+            }
+            
+            // Mix color of liquid based on contents
+            updateLiquidColor();
+
+            // CRITICAL FIX: Run synergy check at the end of every flask update
+            if (typeof updateSynergyHighlighting === 'function') {
+                updateSynergyHighlighting(); 
+            }
+        }
+
+        function getFlaskCounts() {
+            const counts = {};
+            currentFlask.forEach(atom => {
+                counts[atom.symbol] = (counts[atom.symbol] || 0) + 1;
+            });
+            return counts;
+        }
+
+        function generateSignature(counts) {
+            // e.g. { H: 2, O: 1 } -> 'H:2,O:1'
+            // Sort keys alphabetically to ensure deterministic signature
+            return Object.keys(counts).sort().map(k => `${k}:${counts[k]}`).join(',');
+        }
+
+        function generateDisplayFormula(counts) {
+            // Traditional display: H2O instead of H2O1, C comes first if organic, but simple alpha is fine here.
+            let display = '';
+            // Carbon first convention if present
+            const keys = Object.keys(counts).sort();
+            if (keys.includes('C')) {
+                const cIdx = keys.indexOf('C');
+                keys.splice(cIdx, 1);
+                keys.unshift('C');
+                if (keys.includes('H')) {
+                    const hIdx = keys.indexOf('H');
+                    keys.splice(hIdx, 1);
+                    keys.splice(1, 0, 'H'); // C then H
+                }
+            }
+            
+            const subscripts = {'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'⒆','8':'₈','9':'₉'};
+            
+            keys.forEach(k => {
+                display += k;
+                if (counts[k] > 1) {
+                    const numStr = counts[k].toString();
+                    for(let i=0; i<numStr.length; i++){
+                        display += subscripts[numStr[i]] || numStr[i];
+                    }
+                }
+            });
+            return display;
+        }
+
+        function updateLiquidColor() {
+            // Simple color mixing based on categories present
+            let r=0, g=0, b=0;
+            currentFlask.forEach(atom => {
+                switch(atom.cat) {
+                    case 'nonmetal': r+=16; g+=185; b+=129; break; // emerald
+                    case 'alkali': r+=245; g+=158; b+=11; break; // amber
+                    case 'halogen': r+=234; g+=179; b+=8; break; // yellow
+                    case 'metal': r+=99; g+=102; b+=241; break; // indigo
+                    case 'noble': r+=6; g+=182; b+=212; break; // cyan
+                    case 'metalloid': r+=20; g+=184; b+=166; break; // teal
+                }
+            });
+            
+            if(currentFlask.length > 0) {
+                // Calculate average colors
+                r = Math.floor(r/currentFlask.length);
+                g = Math.floor(g/currentFlask.length);
+                b = Math.floor(b/currentFlask.length);
+                
+                // Color the liquid
+                flaskLiquid.style.background = `linear-gradient(180deg, rgba(${r}, ${g}, ${b}, 0.5) 0%, rgba(${r}, ${g}, ${b}, 0.8) 100%)`;
+                
+                // --- NEW CODE: Color the ambient background ---
+                // We use a lower opacity (0.15) for the background so it doesn't blind the user
+                ambientGlow.style.background = `radial-gradient(circle at 50% 50%, rgba(${r}, ${g}, ${b}, 0.15) 0%, #0f172a 70%)`;
+            } else {
+                // Reset to default dark background when flask is cleared
+                ambientGlow.style.background = `radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.05) 0%, #0f172a 70%)`;
+            }
+        }
+        function mixElements() {
+            if (currentFlask.length === 0) return;
+
+            const btn = document.getElementById('mix-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Mixing...';
+
+            // Animation sequence
+            flaskBody.classList.add('animate-shake');
+flaskLiquid.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(200,200,255,0.9) 100%)';
+try { startBubbling(); } catch(e) { console.warn('Audio start failed:', e); }
+            
+            // Reset atoms to the Flexbox grid
+                const atoms = document.querySelectorAll('.atom-bubble');
+                atoms.forEach(a => {
+                    a.style.position = 'relative'; // Put back into grid
+                    a.style.left = 'auto';
+                    a.style.top = 'auto';
+                    a.style.opacity = '1';
+                    a.style.transform = 'scale(1)';
+                });
+
+setTimeout(() => {
+    try { stopBubbling(); } catch(e) { console.warn('Audio stop failed:', e); }
+    flaskBody.classList.remove('animate-shake');
+    evaluateMix();
+    btn.disabled = false;
+    btn.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg> MIX';
+}, 800);
+        }
+        function isPartialMatch(flaskCounts) {
+            // Check if the current flask is a building block for any recipe
+            for (let recipe of recipesData) {
+                // Parse the recipe signature (e.g., "C:2,H:6" becomes {C: 2, H: 6})
+                const required = {};
+                recipe.sig.split(',').forEach(part => {
+                    const [el, num] = part.split(':');
+                    required[el] = parseInt(num);
+                });
+
+                let isSubset = true;
+                // Ensure the flask doesn't have any elements not in the recipe, or too many of one element
+                for (let symbol in flaskCounts) {
+                    if (!required[symbol] || flaskCounts[symbol] > required[symbol]) {
+                        isSubset = false;
+                        break;
+                    }
+                }
+                
+                // If it is a subset, and it's an undiscovered recipe, give them a hint!
+                if (isSubset && !discovered.has(recipe.id)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        // --- NEW CODE: Element Synergy Highlighting ---
+        function updateSynergyHighlighting() {
+            const counts = getFlaskCounts();
+            const elementBtns = document.querySelectorAll('.element-btn');
+
+            // 1. Clean slate: aggressively remove ALL effects from ALL buttons first
+            elementBtns.forEach(btn => {
+                btn.classList.remove('opacity-25', 'grayscale', 'ring-2', 'ring-amber-300', 'animate-pulse');
+            });
+
+            // 2. If the flask is empty, stop here (everything is already back to normal)
+            if (Object.keys(counts).length === 0) return;
+
+            const validNextSymbols = new Set();
+
+            // 3. Find missing elements for valid recipes
+            recipesData.forEach(recipe => {
+                if (discovered.has(recipe.id)) return; // Skip completed recipes
+                
+                const required = {};
+                recipe.sig.split(',').forEach(part => {
+                    const [el, num] = part.split(':');
+                    required[el] = parseInt(num);
+                });
+
+                let isSubset = true;
+                for (let symbol in counts) {
+                    if (!required[symbol] || counts[symbol] > required[symbol]) {
+                        isSubset = false;
+                        break;
+                    }
+                }
+
+                if (isSubset) {
+                    for (let symbol in required) {
+                        if ((counts[symbol] || 0) < required[symbol]) {
+                            validNextSymbols.add(symbol);
+                        }
+                    }
+                }
+            });
+
+            // 4. Apply the glow or dim effects
+            elementBtns.forEach(btn => {
+                const symbol = btn.getAttribute('data-symbol');
+                if (validNextSymbols.has(symbol)) {
+                    // Valid next step -> Glow
+                    btn.classList.add('ring-2', 'ring-amber-300', 'animate-pulse');
+                } else {
+                    // Invalid path -> Dim
+                    btn.classList.add('opacity-25', 'grayscale');
+                }
+            });
+        
+
+            // 4. Apply the glow or dim effects to the buttons
+            elementBtns.forEach(btn => {
+                const symbol = btn.getAttribute('data-symbol');
+                if (validNextSymbols.has(symbol)) {
+                    // It's a valid next step! Glow.
+                    btn.classList.remove('opacity-25', 'grayscale');
+                    btn.classList.add('ring-2', 'ring-amber-300', 'animate-pulse');
+                } else {
+                    // It ruins the current mixture. Dim it.
+                    btn.classList.remove('ring-2', 'ring-amber-300', 'animate-pulse');
+                    btn.classList.add('opacity-25', 'grayscale');
+                }
+            });
+        }
+        // ----------------------------------------------
+
+        function evaluateMix() {
+            const counts = getFlaskCounts();
+            const sig = generateSignature(counts);
+            
+            const match = recipesData.find(r => r.sig === sig);
+
+            if (match) {
+                // Success
+                playSuccess();
+                createParticles(flaskBody, 20, 'cat-noble'); // Bright explosion
+                showResultModal(match);
+                if (!discovered.has(match.id)) {
+                    discovered.add(match.id);
+                    saveProgress();
+                    updateDiscoveryCount();
+                    renderDiscoveredList();
+                }
+                clearFlask();
+            } else {
+                // --- NEW CODE: Hint System ---
+                playFizzle();
+                const f = document.getElementById('current-formula');
+                
+                if (isPartialMatch(counts)) {
+                    // Hint: Almost a match!
+                    flaskLiquid.style.background = 'linear-gradient(180deg, rgba(245, 158, 11, 0.8) 0%, rgba(217, 119, 6, 0.9) 100%)'; // Amber color
+                    f.innerText = 'Almost...';
+                    f.className = 'h-8 font-mono text-lg text-amber-400 tracking-wider font-bold';
+                } else {
+                    // Total Failure
+                    flaskLiquid.style.background = 'linear-gradient(180deg, rgba(71, 85, 105, 0.8) 0%, rgba(30, 41, 59, 0.9) 100%)'; // Dark gray
+                    f.innerText = 'Unknown Gloop';
+                    f.className = 'h-8 font-mono text-lg text-red-400 tracking-wider';
+                }
+                // -----------------------------
+                
+                // Reset atoms to slightly randomized positions
+                const atoms = document.querySelectorAll('.atom-bubble');
+                atoms.forEach(a => {
+                    a.style.opacity = '1';
+                    a.style.transform = 'translate(0, 0) scale(1)';
+                    const left = 10 + Math.random() * 80; 
+                    const top = 10 + Math.random() * 80;
+                    a.style.left = `${left}%`;
+                    a.style.top = `${top}%`;
+                });
+            }
+        }
+
+        function createParticles(container, count, colorClass) {
+            const rect = container.getBoundingClientRect();
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = `particle ${colorClass} w-3 h-3`;
+                
+                // Start center
+                p.style.left = '50%';
+                p.style.top = '50%';
+                
+                // Random destination
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 50 + Math.random() * 100;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+                
+                p.style.setProperty('--tx', `${tx}px`);
+                p.style.setProperty('--ty', `${ty}px`);
+                
+                container.appendChild(p);
+                
+                setTimeout(() => p.remove(), 1000);
+            }
+        }
+
+        function showResultModal(recipe) {
+            const overlay = document.getElementById('modal-overlay');
+            const modal = document.getElementById('result-modal');
+            
+            document.getElementById('result-icon').innerText = recipe.emoji;
+            document.getElementById('result-icon').className = 'w-24 h-24 mx-auto rounded-full flex items-center justify-center mb-4 text-5xl shadow-[0_0_30px_rgba(56,189,248,0.5)] bg-slate-700 border-4 border-blue-400';
+            document.getElementById('result-title').innerText = recipe.name;
+            document.getElementById('result-formula').innerText = recipe.formula;
+            document.getElementById('result-desc').innerText = recipe.desc;
+
+            overlay.classList.remove('hidden');
+            // Small delay to allow display:block to apply before animating opacity
+            setTimeout(() => {
+                overlay.classList.replace('opacity-0', 'opacity-100');
+                modal.classList.replace('scale-90', 'scale-100');
+            }, 10);
+            
+            // Fire confetti
+            fireConfetti();
+        }
+
+        function closeModal() {
+            const overlay = document.getElementById('modal-overlay');
+            const modal = document.getElementById('result-modal');
+            
+            overlay.classList.replace('opacity-100', 'opacity-0');
+            modal.classList.replace('scale-100', 'scale-90');
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 300);
+        }
+
+        function showInfo() {
+            document.getElementById('info-modal').classList.remove('hidden');
+        }
+
+        function closeInfo() {
+            document.getElementById('info-modal').classList.add('hidden');
+        }
+
+        function updateDiscoveryCount() {
+            discoveryCountText.innerText = `${discovered.size} / ${recipesData.length}`;
+        }
+
+function toggleEncyclopedia() {
+    encyclopediaMode = !encyclopediaMode;
+
+    // Swap button icons and label
+    document.getElementById('toggle-icon-book').classList.toggle('hidden', encyclopediaMode);
+    document.getElementById('toggle-icon-list').classList.toggle('hidden', !encyclopediaMode);
+    document.getElementById('toggle-label').textContent = encyclopediaMode ? 'My Discoveries' : 'Encyclopedia';
+    document.getElementById('panel-title').textContent = encyclopediaMode ? 'Encyclopedia' : 'Discovered';
+
+    // Pulse the button briefly
+    const btn = document.getElementById('encyclopedia-toggle');
+    btn.classList.add('ring-2', 'ring-amber-400');
+    setTimeout(() => btn.classList.remove('ring-2', 'ring-amber-400'), 600);
+
+    renderDiscoveredList();
+}
+            function renderDiscoveredList() {
+            discoveredList.innerHTML = '';
+
+            if (encyclopediaMode) {
+                // Show ALL recipes — discovered ones in full, undiscovered as locked riddles
+                recipesData.forEach(item => {
+                    const isFound = discovered.has(item.id);
+                    const card = document.createElement('div');
+
+                    if (isFound) {
+                        // --- UPDATED CODE: Added cursor-pointer, active:scale-95, and onclick ---
+                        card.className = 'bg-slate-800 border border-slate-600 rounded-xl p-3 flex items-center gap-4 hover:bg-slate-700 transition-all shadow-md cursor-pointer active:scale-95';
+                        card.onclick = () => {
+                            try { playPop(); } catch(e) {}
+                            showResultModal(item);
+                        };
+                        // -------------------------------------------------------------------------
+                        card.innerHTML = `
+                            <div class="text-3xl">${item.emoji}</div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-bold text-white truncate">${item.name}</div>
+                                <div class="font-mono text-blue-400 text-sm">${item.formula}</div>
+                            </div>
+                            <div class="text-emerald-400 flex-shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                        `;
+                    } else {
+                        // Locked riddle card (Not clickable)
+                        card.className = 'bg-slate-900 border border-slate-700 rounded-xl p-3 flex items-start gap-3 opacity-80 hover:opacity-100 transition-opacity';
+                        card.innerHTML = `
+                            <div class="flex-shrink-0 mt-0.5 text-slate-500">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-bold text-slate-500 font-mono tracking-widest text-sm mb-1">??? &nbsp;·&nbsp; ??????</div>
+                                <div class="text-slate-400 text-xs leading-relaxed italic">${item.desc}</div>
+                            </div>
+                        `;
+                    }
+
+                    discoveredList.appendChild(card);
+                });
+
+                // Summary pill at the bottom
+                const summary = document.createElement('div');
+                summary.className = 'text-center text-slate-500 text-xs pt-1 pb-2';
+                summary.textContent = `${discovered.size} of ${recipesData.length} discovered`;
+                discoveredList.appendChild(summary);
+
+            } else {
+                // Original "discoveries only" mode
+                if (discovered.size === 0) {
+                    discoveredList.innerHTML = `
+                        <div class="text-center text-slate-500 mt-10 p-4 border border-dashed border-slate-700 rounded-xl">
+                            Mix elements to discover compounds. Try 2 Hydrogen and 1 Oxygen!
+                        </div>`;
+                    return;
+                }
+
+                const discoveredArr = Array.from(discovered)
+                    .map(id => recipesData.find(r => r.id === id))
+                    .filter(Boolean)
+                    .reverse();
+
+                discoveredArr.forEach(item => {
+                    const card = document.createElement('div');
+                    // --- UPDATED CODE: Added cursor-pointer, active:scale-95, and onclick ---
+                    card.className = 'bg-slate-800 border border-slate-600 rounded-xl p-3 flex items-center gap-4 hover:bg-slate-700 transition-all animate-pop shadow-md cursor-pointer active:scale-95';
+                    card.onclick = () => {
+                        try { playPop(); } catch(e) {}
+                        showResultModal(item);
+                    };
+                    // -------------------------------------------------------------------------
+                    card.innerHTML = `
+                        <div class="text-3xl">${item.emoji}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-white truncate">${item.name}</div>
+                            <div class="font-mono text-blue-400 text-sm">${item.formula}</div>
+                        </div>
+                    `;
+                    discoveredList.appendChild(card);
+                });
+            }
+        }
+
+        function fireConfetti() {
+            // Simple custom confetti overlay
+            const canvas = document.createElement('canvas');
+            canvas.style.position = 'fixed';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.width = '100vw';
+            canvas.style.height = '100vh';
+            canvas.style.pointerEvents = 'none';
+            canvas.style.zIndex = '9999';
+            document.body.appendChild(canvas);
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const particles = [];
+            const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6'];
+            
+            for(let i=0; i<100; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 20,
+                    vy: (Math.random() - 0.5) * 20 - 5,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rot: Math.random() * 360,
+                    rotS: (Math.random() - 0.5) * 10
+                });
+            }
+            
+            let frame = 0;
+            function animateConfetti() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let active = false;
+                
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.5; // gravity
+                    p.rot += p.rotS;
+                    
+                    if (p.y < canvas.height) active = true;
+                    
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                    ctx.restore();
+                });
+                
+                if (active && frame < 150) {
+                    frame++;
+                    requestAnimationFrame(animateConfetti);
+                } else {
+                    canvas.remove();
+                }
+            }
+            animateConfetti();
+        }
+        // --- NEW CODE: Hint System Logic ---
+        function showHint() {
+            const hintDisplay = document.getElementById('hint-display');
+            
+            // 1. Find all recipes the player hasn't discovered yet
+            const undiscovered = recipesData.filter(r => !discovered.has(r.id));
+
+            // 2. If they found everything, congratulate them
+            if (undiscovered.length === 0) {
+                hintDisplay.innerHTML = "✨ You've discovered every compound! Master Alchemist!";
+                hintDisplay.className = "text-sm text-emerald-400 text-center animate-pop opacity-100";
+                return;
+            }
+
+            // 3. Pick a random undiscovered recipe
+            const randomRecipe = undiscovered[Math.floor(Math.random() * undiscovered.length)];
+
+            // 4. Extract the elements needed from the signature (e.g., "C:2,H:6" -> ["C", "H"])
+            const requiredSymbols = randomRecipe.sig.split(',').map(part => part.split(':')[0]);
+
+            // 5. Convert symbols to full element names for easier reading
+            const elementNames = requiredSymbols.map(sym => {
+                const el = elementsData.find(e => e.symbol === sym);
+                return el ? el.name : sym;
+            });
+
+            // 6. Format the hint message depending on how many elements are involved
+            let hintMsg = "";
+            if (elementNames.length === 1) {
+                hintMsg = `Try experimenting with multiple <b>${elementNames[0]}</b> atoms.`;
+            } else if (elementNames.length === 2) {
+                hintMsg = `Try combining <b>${elementNames[0]}</b> and <b>${elementNames[1]}</b>.`;
+            } else {
+                hintMsg = `Try mixing <b>${elementNames[0]}</b>, <b>${elementNames[1]}</b>, and <b>${elementNames[2]}</b>.`;
+            }
+
+            // 7. Display the hint with a quick pop animation
+            hintDisplay.innerHTML = `💡 <b>Hint:</b> ${hintMsg}`;
+            hintDisplay.className = "text-sm text-amber-400 text-center animate-pop opacity-100";
+            
+            // Optional: Remove the hint after 5 seconds so it doesn't clutter the screen
+            setTimeout(() => {
+                hintDisplay.classList.replace('opacity-100', 'opacity-0');
+            }, 6000);
+        }
+        // -----------------------------------
+
+        // Start App
+        window.onload = init;
+
+    </script>
+</body>
+</html>
