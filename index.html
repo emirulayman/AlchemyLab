@@ -222,6 +222,114 @@
             animation: ambientBreathe 8s infinite ease-in-out;
         }
         /* ---------------------------------------- */
+        #achievement-toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 9999;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+    opacity: 0;
+    pointer-events: none;
+    min-width: 280px;
+}
+#achievement-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+#achievement-toast .toast-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+#achievement-toast .toast-body {
+    display: flex;
+    flex-direction: column;
+}
+#achievement-toast .toast-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #f59e0b;
+}
+#achievement-toast .toast-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-top: 1px;
+}
+#achievement-toast .toast-desc {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+#achievements-modal .ach-card {
+    background: #1e293b;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: opacity 0.3s;
+}
+#achievements-modal .ach-card.locked {
+    opacity: 0.35;
+    filter: grayscale(1);
+}
+#achievements-modal .ach-icon {
+    font-size: 2rem;
+    width: 48px;
+    text-align: center;
+    flex-shrink: 0;
+}
+#achievements-modal .ach-info { flex: 1; min-width: 0; }
+#achievements-modal .ach-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: #f1f5f9;
+}
+#achievements-modal .ach-desc {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+}
+#achievements-modal .ach-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: #f59e0b22;
+    color: #f59e0b;
+    border: 1px solid #f59e0b55;
+    white-space: nowrap;
+}
+#mix-feedback {
+    position: absolute;
+    bottom: -2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+#mix-feedback.show {
+    opacity: 1;
+}
     </style>
 </head>
 <body class="min-h-screen flex flex-col font-sans">
@@ -246,6 +354,10 @@
                 <button onclick="resetProgress()" title="Reset all progress" class="p-2 rounded-full bg-slate-800 hover:bg-red-900 hover:text-red-400 text-slate-500 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
+                <button onclick="showAchievements()" title="Achievements" class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors relative" id="trophy-btn">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+    <span id="new-ach-dot" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-amber-400 rounded-full border-2 border-slate-800"></span>
+</button>
                 <button onclick="showInfo()" class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </button>
@@ -280,25 +392,25 @@
                 </div>
 
                 <div class="flask-container mb-8" id="flask-container">
-                    <div class="flask-neck"></div>
-                    <div class="flask-shape" id="flask-body">
-                        <!-- Liquid background -->
-                        <div class="flask-liquid" id="flask-liquid"></div>
-                        <!-- Atoms container inside flask -->
-                        <div id="flask-atoms" class="absolute top-[20%] left-[5%] w-[90%] h-[75%] z-20 flex flex-wrap content-center justify-center gap-2"></div>
-                    </div>
-                </div>
-
-                <div class="flex gap-4 w-full max-w-[300px]">
-                    <button onclick="clearFlask()" class="flex-1 py-3 px-4 rounded-xl font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        Clear
-                    </button>
-                    <button id="mix-btn" onclick="mixElements()" class="flex-[2] py-3 px-4 rounded-xl font-bold bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-400 hover:to-emerald-400 text-white transition-all shadow-[0_0_20px_rgba(56,189,248,0.4)] active:scale-95 flex items-center justify-center gap-2">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                        MIX
-                    </button>
-                </div>
+    <div class="flask-neck"></div>
+    <div class="flask-shape" id="flask-body">
+        <!-- Liquid background -->
+        <div class="flask-liquid" id="flask-liquid"></div>
+        <!-- Atoms container inside flask -->
+        <div id="flask-atoms" class="absolute top-[20%] left-[5%] w-[90%] h-[75%] z-20 flex flex-wrap content-center justify-center gap-2"></div>
+    </div>
+</div>
+<div class="flex gap-4 w-full max-w-[300px]">
+    <button onclick="clearFlask()" class="flex-1 py-3 px-4 rounded-xl font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+        <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        Clear
+    </button>
+    <button id="mix-btn" onclick="mixElements()" class="flex-[2] py-3 px-4 rounded-xl font-bold bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-400 hover:to-emerald-400 text-white transition-all shadow-[0_0_20px_rgba(56,189,248,0.4)] active:scale-95 flex items-center justify-center gap-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+        MIX
+    </button>
+</div>
+<div id="mix-feedback"></div>
                 
                 <!-- NEW CODE: Hint System UI -->
                 <div class="flex flex-col items-center mt-4 h-16">
@@ -314,7 +426,7 @@
 
         <!-- Right Panel: Discovered Compounds -->
         <section class="glass-panel rounded-2xl p-4 lg:col-span-4 flex flex-col h-[400px] lg:h-[calc(100vh-120px)] shadow-xl">
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center justify-between mb-3">
     <h2 class="text-lg font-semibold flex items-center gap-2 text-slate-200">
         <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
         <span id="panel-title">Discovered</span>
@@ -324,6 +436,42 @@
         <svg id="toggle-icon-list" class="w-4 h-4 text-emerald-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
         <span id="toggle-label">Encyclopedia</span>
     </button>
+</div>
+
+<!-- Encyclopedia controls (search + filter) — hidden in discovery mode -->
+<div id="encyclopedia-controls" class="hidden flex-col gap-2 mb-3">
+    <input type="text" id="encyclopedia-search" placeholder="Search compounds..." 
+        class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 transition-colors placeholder-slate-500">
+    <div id="category-filters" class="flex flex-wrap gap-1.5">
+        <button onclick="setEncyclopediaFilter('all')" data-filter="all"
+            class="filter-btn px-2.5 py-1 rounded-full text-xs font-semibold border transition-all bg-blue-500 border-blue-400 text-white">
+            All
+        </button>
+        <button onclick="setEncyclopediaFilter('organic')" data-filter="organic"
+            class="filter-btn px-2.5 py-1 rounded-full text-xs font-semibold border transition-all bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600">
+            🌿 Organic
+        </button>
+        <button onclick="setEncyclopediaFilter('acid')" data-filter="acid"
+            class="filter-btn px-2.5 py-1 rounded-full text-xs font-semibold border transition-all bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600">
+            ⚠️ Acids
+        </button>
+        <button onclick="setEncyclopediaFilter('gas')" data-filter="gas"
+            class="filter-btn px-2.5 py-1 rounded-full text-xs font-semibold border transition-all bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600">
+            💨 Gases
+        </button>
+        <button onclick="setEncyclopediaFilter('metal')" data-filter="metal"
+            class="filter-btn px-2.5 py-1 rounded-full text-xs font-semibold border transition-all bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600">
+            ⚙️ Metals
+        </button>
+        <button onclick="setEncyclopediaFilter('bio')" data-filter="bio"
+            class="filter-btn px-2.5 py-1 rounded-full text-xs font-semibold border transition-all bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600">
+            🧬 Bio
+        </button>
+        <button onclick="setEncyclopediaFilter('explosive')" data-filter="explosive"
+            class="filter-btn px-2.5 py-1 rounded-full text-xs font-semibold border transition-all bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600">
+            💣 Explosive
+        </button>
+    </div>
 </div>
             <div id="discovered-list" class="flex-1 overflow-y-auto flex flex-col gap-3 pr-2 pb-2">
                 <!-- Discovered items injected here -->
@@ -860,6 +1008,8 @@ function playFizzle() {
         function resetProgress() {
     if (!window.confirm('Wipe all progress and start from scratch? This cannot be undone.')) return;
     localStorage.removeItem('alchemyDiscoveries');
+    localStorage.removeItem('alchemyAchievements');
+    unlockedAchievements = new Set();
     discovered = new Set();
     encyclopediaMode = false;
     document.getElementById('toggle-icon-book').classList.remove('hidden');
@@ -874,7 +1024,8 @@ function playFizzle() {
         // -----------------------------------------
 
         function init() {
-            loadProgress(); // <-- ADD THIS LINE
+            loadProgress();
+            loadAchievements();
             renderElementsGrid(elementsData);
             updateDiscoveryCount();
             renderDiscoveredList(); // <-- ADD THIS LINE
@@ -925,7 +1076,11 @@ function playFizzle() {
                     addElementToFlask(elementData);
                 }
             });
-            // ----------------------------------------------
+            // Encyclopedia search listener
+document.getElementById('encyclopedia-search').addEventListener('input', (e) => {
+    encyclopediaSearch = e.target.value;
+    renderDiscoveredList();
+});
         } // <-- This is the closing bracket for init()
 
         function renderElementsGrid(elements) {
@@ -1207,32 +1362,115 @@ setTimeout(() => {
     btn.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg> MIX';
 }, 800);
         }
-        function isPartialMatch(flaskCounts) {
-            // Check if the current flask is a building block for any recipe
-            for (let recipe of recipesData) {
-                // Parse the recipe signature (e.g., "C:2,H:6" becomes {C: 2, H: 6})
-                const required = {};
-                recipe.sig.split(',').forEach(part => {
-                    const [el, num] = part.split(':');
-                    required[el] = parseInt(num);
-                });
+        function analyzeMixFailure(flaskCounts) {
+    const flaskSymbols = Object.keys(flaskCounts);
+    let bestScore = -1;
+    let bestResult = null;
 
-                let isSubset = true;
-                // Ensure the flask doesn't have any elements not in the recipe, or too many of one element
-                for (let symbol in flaskCounts) {
-                    if (!required[symbol] || flaskCounts[symbol] > required[symbol]) {
-                        isSubset = false;
-                        break;
-                    }
-                }
-                
-                // If it is a subset, and it's an undiscovered recipe, give them a hint!
-                if (isSubset && !discovered.has(recipe.id)) {
-                    return true;
+    for (const recipe of recipesData) {
+        // Parse required elements from signature
+        const required = {};
+        recipe.sig.split(',').forEach(part => {
+            const [el, num] = part.split(':');
+            required[el] = parseInt(num);
+        });
+
+        const requiredSymbols = Object.keys(required);
+
+        // --- Check 1: Exact right elements, wrong ratio ---
+        const sameElements =
+            flaskSymbols.length === requiredSymbols.length &&
+            flaskSymbols.every(s => required[s]) &&
+            requiredSymbols.every(s => flaskCounts[s]);
+
+        if (sameElements) {
+            // Check if ratios are proportionally correct (e.g. H4O2 vs H2O)
+            const ratios = requiredSymbols.map(s => flaskCounts[s] / required[s]);
+            const allSameRatio = ratios.every(r => Math.abs(r - ratios[0]) < 0.001);
+
+            if (allSameRatio && ratios[0] !== 1) {
+                return {
+                    type: 'wrong_ratio',
+                    message: `Right elements — try ${ratios[0] > 1 ? 'fewer' : 'more'} atoms`,
+                    color: 'text-amber-400',
+                    liquidColor: 'linear-gradient(180deg, rgba(245,158,11,0.7) 0%, rgba(180,83,9,0.9) 100%)'
+                };
+            }
+
+            // Same elements but ratios differ non-proportionally
+            return {
+                type: 'wrong_ratio',
+                message: `Right elements, wrong ratio`,
+                color: 'text-amber-400',
+                liquidColor: 'linear-gradient(180deg, rgba(245,158,11,0.7) 0%, rgba(180,83,9,0.9) 100%)'
+            };
+        }
+
+        // --- Check 2: Flask is a valid subset (missing elements) ---
+        let isSubset = true;
+        for (const sym of flaskSymbols) {
+            if (!required[sym] || flaskCounts[sym] > required[sym]) {
+                isSubset = false;
+                break;
+            }
+        }
+
+        if (isSubset && flaskSymbols.length < requiredSymbols.length && !discovered.has(recipe.id)) {
+            // Score by how close we are: more elements matched = better score
+            const matchedCount = flaskSymbols.reduce((acc, s) => acc + (flaskCounts[s] === required[s] ? 1 : 0.5), 0);
+            const score = matchedCount / requiredSymbols.length;
+            if (score > bestScore) {
+                bestScore = score;
+                const missing = requiredSymbols.filter(s => (flaskCounts[s] || 0) < required[s]);
+                const missingNames = missing.map(sym => {
+                    const el = elementsData.find(e => e.symbol === sym);
+                    return el ? el.name : sym;
+                });
+                bestResult = {
+                    type: 'missing_elements',
+                    message: missingNames.length === 1
+                        ? `Missing element — try adding ${missingNames[0]}`
+                        : `Missing elements — try adding ${missingNames.slice(0, 2).join(' or ')}`,
+                    color: 'text-sky-400',
+                    liquidColor: 'linear-gradient(180deg, rgba(56,189,248,0.6) 0%, rgba(14,116,144,0.9) 100%)'
+                };
+            }
+        }
+
+        // --- Check 3: One extra element that doesn't belong ---
+        if (flaskSymbols.length === requiredSymbols.length + 1) {
+            const extraSymbols = flaskSymbols.filter(s => !required[s]);
+            if (extraSymbols.length === 1) {
+                const score = 0.4;
+                if (score > bestScore) {
+                    bestScore = score;
+                    const extraEl = elementsData.find(e => e.symbol === extraSymbols[0]);
+                    bestResult = {
+                        type: 'extra_element',
+                        message: `${extraEl ? extraEl.name : extraSymbols[0]} doesn't belong here`,
+                        color: 'text-rose-400',
+                        liquidColor: 'linear-gradient(180deg, rgba(244,63,94,0.6) 0%, rgba(159,18,57,0.9) 100%)'
+                    };
                 }
             }
-            return false;
         }
+    }
+
+    // Return the best partial match found, or a total failure
+    if (bestResult) return bestResult;
+
+    return {
+        type: 'no_match',
+        message: 'Unknown gloop — no known compound',
+        color: 'text-slate-400',
+        liquidColor: 'linear-gradient(180deg, rgba(71,85,105,0.8) 0%, rgba(30,41,59,0.9) 100%)'
+    };
+}
+
+// Keep this shim so updateSynergyHighlighting still works
+function isPartialMatch(flaskCounts) {
+    return analyzeMixFailure(flaskCounts).type !== 'no_match';
+}
         // --- NEW CODE: Element Synergy Highlighting ---
         function updateSynergyHighlighting() {
             const counts = getFlaskCounts();
@@ -1320,24 +1558,27 @@ setTimeout(() => {
                     saveProgress();
                     updateDiscoveryCount();
                     renderDiscoveredList();
+                    checkAchievements();
                 }
                 clearFlask();
             } else {
-                // --- NEW CODE: Hint System ---
-                playFizzle();
-                const f = document.getElementById('current-formula');
-                
-                if (isPartialMatch(counts)) {
-                    // Hint: Almost a match!
-                    flaskLiquid.style.background = 'linear-gradient(180deg, rgba(245, 158, 11, 0.8) 0%, rgba(217, 119, 6, 0.9) 100%)'; // Amber color
-                    f.innerText = 'Almost...';
-                    f.className = 'h-8 font-mono text-lg text-amber-400 tracking-wider font-bold';
-                } else {
-                    // Total Failure
-                    flaskLiquid.style.background = 'linear-gradient(180deg, rgba(71, 85, 105, 0.8) 0%, rgba(30, 41, 59, 0.9) 100%)'; // Dark gray
-                    f.innerText = 'Unknown Gloop';
-                    f.className = 'h-8 font-mono text-lg text-red-400 tracking-wider';
-                }
+    playFizzle();
+    const f = document.getElementById('current-formula');
+    const analysis = analyzeMixFailure(counts);
+
+    flaskLiquid.style.background = analysis.liquidColor;
+
+    const labels = {
+        wrong_ratio:      '⚖️ Wrong ratio',
+        missing_elements: '🧩 Incomplete',
+        extra_element:    '➕ One too many',
+        no_match:         '❓ Unknown gloop',
+    };
+    f.innerText = labels[analysis.type] || '❓ Unknown gloop';
+    f.className = `h-8 font-mono text-lg tracking-wider font-bold ${analysis.color}`;
+
+    // Show detailed feedback below the buttons
+    showMixFeedback(analysis.message, analysis.color);
                 // -----------------------------
                 
                 // Reset atoms to slightly randomized positions
@@ -1426,13 +1667,26 @@ setTimeout(() => {
 function toggleEncyclopedia() {
     encyclopediaMode = !encyclopediaMode;
 
-    // Swap button icons and label
     document.getElementById('toggle-icon-book').classList.toggle('hidden', encyclopediaMode);
     document.getElementById('toggle-icon-list').classList.toggle('hidden', !encyclopediaMode);
     document.getElementById('toggle-label').textContent = encyclopediaMode ? 'My Discoveries' : 'Encyclopedia';
     document.getElementById('panel-title').textContent = encyclopediaMode ? 'Encyclopedia' : 'Discovered';
 
-    // Pulse the button briefly
+    // Show/hide the filter+search bar
+    const controls = document.getElementById('encyclopedia-controls');
+    if (encyclopediaMode) {
+        controls.classList.remove('hidden');
+        controls.classList.add('flex');
+    } else {
+        controls.classList.remove('flex');
+        controls.classList.add('hidden');
+        // Reset filters when leaving encyclopedia mode
+        encyclopediaFilter = 'all';
+        encyclopediaSearch = '';
+        document.getElementById('encyclopedia-search').value = '';
+        setEncyclopediaFilter('all');
+    }
+
     const btn = document.getElementById('encyclopedia-toggle');
     btn.classList.add('ring-2', 'ring-amber-400');
     setTimeout(() => btn.classList.remove('ring-2', 'ring-amber-400'), 600);
@@ -1444,7 +1698,8 @@ function toggleEncyclopedia() {
 
             if (encyclopediaMode) {
                 // Show ALL recipes — discovered ones in full, undiscovered as locked riddles
-                recipesData.forEach(item => {
+                const filteredRecipes = applyEncyclopediaFilters(recipesData);
+filteredRecipes.forEach(item => {
                     const isFound = discovered.has(item.id);
                     const card = document.createElement('div');
 
@@ -1486,7 +1741,10 @@ function toggleEncyclopedia() {
                 // Summary pill at the bottom
                 const summary = document.createElement('div');
                 summary.className = 'text-center text-slate-500 text-xs pt-1 pb-2';
-                summary.textContent = `${discovered.size} of ${recipesData.length} discovered`;
+                const visibleDiscovered = filteredRecipes.filter(r => discovered.has(r.id)).length;
+                summary.textContent = encyclopediaFilter === 'all' && !encyclopediaSearch
+                    ? `${discovered.size} of ${recipesData.length} discovered`
+                    : `Showing ${filteredRecipes.length} compounds · ${visibleDiscovered} discovered`;
                 discoveredList.appendChild(summary);
 
             } else {
@@ -1588,7 +1846,18 @@ function toggleEncyclopedia() {
             animateConfetti();
         }
         // --- NEW CODE: Hint System Logic ---
-        function showHint() {
+        function showMixFeedback(message, colorClass) {
+    const el = document.getElementById('mix-feedback');
+    if (!el) return;
+    el.innerText = message;
+    el.className = `show ${colorClass}`;
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(() => {
+        el.classList.remove('show');
+    }, 4000);
+}
+
+            function showHint() {
             const hintDisplay = document.getElementById('hint-display');
             
             // 1. Find all recipes the player hasn't discovered yet
@@ -1633,10 +1902,183 @@ function toggleEncyclopedia() {
             }, 6000);
         }
         // -----------------------------------
+        // =============================================
+// ACHIEVEMENT SYSTEM
+// =============================================
+const achievementsData = [
+    // Milestone achievements
+    { id: 'first_discovery',  icon: '🌱', name: 'First Steps',        desc: 'Discover your first compound.',              check: () => discovered.size >= 1 },
+    { id: 'ten_compounds',    icon: '⚗️', name: 'Budding Chemist',    desc: 'Discover 10 compounds.',                     check: () => discovered.size >= 10 },
+    { id: 'twenty_five',      icon: '🔬', name: 'Lab Regular',        desc: 'Discover 25 compounds.',                     check: () => discovered.size >= 25 },
+    { id: 'fifty',            icon: '🧫', name: 'Senior Researcher',  desc: 'Discover 50 compounds.',                     check: () => discovered.size >= 50 },
+    { id: 'one_hundred',      icon: '🎓', name: 'PhD Candidate',      desc: 'Discover 100 compounds.',                    check: () => discovered.size >= 100 },
+    { id: 'master',           icon: '👑', name: 'Master Alchemist',   desc: 'Discover every single compound.',            check: () => discovered.size >= recipesData.length },
 
+    // Category achievements — check if discovered set contains these specific IDs
+    { id: 'acid_collector',   icon: '⚠️', name: 'Acid Collector',    desc: 'Discover 5 acids (HCl, H₂SO₄, HNO₃…)',      check: () => ['hcl','sulfuric','nitric','phosphoric','lihf','hcooh','acetic','oxalic','lactic','citric','boric','h2so3'].filter(id => discovered.has(id)).length >= 5 },
+    { id: 'pyro',             icon: '🔥', name: 'Pyromaniac',        desc: 'Discover 5 flammable compounds.',             check: () => ['methane','ethanol','ethylene','ethane','propane','butane','butene','benzene','hexane','acetylene','hydrogen'].filter(id => discovered.has(id)).length >= 5 },
+    { id: 'life_scientist',   icon: '🧬', name: 'Life Scientist',    desc: 'Discover glucose, caffeine, dopamine & DNA bases.', check: () => ['glucose','caffeine','dopamine','dna_base_adenine','dna_base_guanine'].filter(id => discovered.has(id)).length >= 4 },
+    { id: 'gas_giant',        icon: '💨', name: 'Gas Giant',         desc: 'Discover 6 gases (O₂, N₂, CO₂, CH₄…)',      check: () => ['oxygen','nitrogen','hydrogen','co2','methane','ozone','laughing_gas','chlorine','so2','no2','no'].filter(id => discovered.has(id)).length >= 6 },
+    { id: 'pharmacist',       icon: '💊', name: 'Pharmacist',        desc: 'Discover aspirin, ibuprofen & paracetamol.',  check: () => ['aspirin','ibuprofen','paracetamol'].every(id => discovered.has(id)) },
+    { id: 'kitchen_chemist',  icon: '🍳', name: 'Kitchen Chemist',   desc: 'Discover salt, sugar, baking soda & vinegar.', check: () => ['salt','glucose','baking_soda','acetic'].every(id => discovered.has(id)) },
+    { id: 'explosive_expert', icon: '💣', name: 'Explosive Expert',  desc: 'Discover TNT, nitroglycerin & saltpeter.',    check: () => ['tnt','nitroglycerin','kno3'].every(id => discovered.has(id)) },
+    { id: 'noble_gases_done', icon: '🌬️', name: 'Noble Pursuits',   desc: 'Discover both diatomic noble gas compounds.', check: () => ['oxygen','nitrogen','hydrogen','chlorine'].filter(id => discovered.has(id)).length >= 4 },
+    { id: 'hormone_hunter',   icon: '🩺', name: 'Hormone Hunter',   desc: 'Discover testosterone, estradiol & adrenaline.', check: () => ['testosterone','estradiol','adrenaline'].every(id => discovered.has(id)) },
+];
+
+let unlockedAchievements = new Set();
+let newAchievementsPending = false;
+
+function saveAchievements() {
+    localStorage.setItem('alchemyAchievements', JSON.stringify([...unlockedAchievements]));
+}
+
+function loadAchievements() {
+    const saved = localStorage.getItem('alchemyAchievements');
+    if (saved) unlockedAchievements = new Set(JSON.parse(saved));
+}
+
+function checkAchievements() {
+    achievementsData.forEach(ach => {
+        if (!unlockedAchievements.has(ach.id) && ach.check()) {
+            unlockedAchievements.add(ach.id);
+            saveAchievements();
+            showAchievementToast(ach);
+            newAchievementsPending = true;
+            document.getElementById('new-ach-dot').classList.remove('hidden');
+        }
+    });
+}
+
+let toastQueue = [];
+let toastRunning = false;
+
+function showAchievementToast(ach) {
+    toastQueue.push(ach);
+    if (!toastRunning) processToastQueue();
+}
+
+function processToastQueue() {
+    if (toastQueue.length === 0) { toastRunning = false; return; }
+    toastRunning = true;
+    const ach = toastQueue.shift();
+    const toast = document.getElementById('achievement-toast');
+    document.getElementById('toast-icon').innerText = ach.icon;
+    document.getElementById('toast-name').innerText = ach.name;
+    document.getElementById('toast-desc').innerText = ach.desc;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(processToastQueue, 500);
+    }, 3500);
+}
+
+function showAchievements() {
+    document.getElementById('new-ach-dot').classList.add('hidden');
+    newAchievementsPending = false;
+    const list = document.getElementById('achievements-list');
+    list.innerHTML = '';
+    const unlocked = achievementsData.filter(a => unlockedAchievements.has(a.id));
+    const locked   = achievementsData.filter(a => !unlockedAchievements.has(a.id));
+    document.getElementById('ach-progress-text').innerText = `${unlocked.length} of ${achievementsData.length} unlocked`;
+    [...unlocked, ...locked].forEach(ach => {
+        const isUnlocked = unlockedAchievements.has(ach.id);
+        const card = document.createElement('div');
+        card.className = `ach-card${isUnlocked ? '' : ' locked'}`;
+        card.innerHTML = `
+            <div class="ach-icon">${ach.icon}</div>
+            <div class="ach-info">
+                <div class="ach-name">${isUnlocked ? ach.name : '???'}</div>
+                <div class="ach-desc">${ach.desc}</div>
+            </div>
+            ${isUnlocked ? '<div class="ach-badge">Unlocked</div>' : ''}
+        `;
+        list.appendChild(card);
+    });
+    document.getElementById('achievements-modal').classList.remove('hidden');
+}
+
+function closeAchievements() {
+    document.getElementById('achievements-modal').classList.add('hidden');
+}
+
+// =============================================
+// ENCYCLOPEDIA FILTER & SEARCH
+// =============================================
+let encyclopediaFilter = 'all';
+let encyclopediaSearch = '';
+
+// Tag map — which recipe IDs belong to which filter categories
+const recipeCategories = {
+    acid:      ['hcl','sulfuric','nitric','phosphoric','lihf','hcooh','acetic','oxalic','lactic','citric','boric','h2so3','h3po3'],
+    gas:       ['oxygen','nitrogen','hydrogen','co2','co','methane','ozone','laughing_gas','so2','so3','no','no2','chlorine','hf2','nf3','sf6','n2h4','ph3','sih4'],
+    organic:   ['ethanol','glucose','ethylene','ethane','propane','butane','butene','benzene','hexane','acetylene','toluene','naphthalene','acetic','acetone','glycerol','lactic','citric','sucrose','caffeine','cholesterol','dopamine','serotonin','adrenaline','morphine','aspirin','ibuprofen','paracetamol','vitamin_c','retinol','cholecalciferol','tocopherol','urea','hcooh','propionic','butyric','benzoic','salicylic','malic','glutamic','tryptophan','phenylalanine','vanillin','menthol','camphor','thymol','carvone','diethylether','thf','styrene','phenol','furfural','maleic','tartaric','propanol','butanol','pentane','cyclopentane','cyclohexane','methylcyclohexane','xylene','cumene','decane','caprylic','methylamine','aniline','pyridine','alanine','glycine','penicillin','testosterone','estradiol','progesterone','dna_base_adenine','dna_base_guanine','nylon','nitroglycerin'],
+    metal:     ['rust','sand','foolsgold','al2o3','cus','cu2o','agno3','fe3o4','au2o3','fecl3','cucl2','cuso4','agcl','aucl3','al2sio5','fecl2','fe_oh_3','feco3','fe2s3','cu2s','cuco3','cu_oh_2','ag2s','ag2o','agf','au_cn_2','aucl','sic','mgso4','cacl2','feso4','k2so4','naclo','kno3','k2cr2o7','kmno4','ki','kcl','koh','k2o','k2co3','nah','cah2','li2o','licl','lioh','na2co3','na2so4','naf','na2s','na2o','cao','mgo','mgcl2','mgco3','mg3n2','mgf2','alcl3','al_oh_3','aln','alp','alf3','bcl3','bf3','nabh4','na2b4o7','boric','b2o3'],
+    bio:       ['glucose','caffeine','dopamine','serotonin','adrenaline','morphine','aspirin','ibuprofen','paracetamol','vitamin_c','retinol','cholecalciferol','tocopherol','urea','lactic','citric','sucrose','cholesterol','testosterone','estradiol','progesterone','dna_base_adenine','dna_base_guanine','penicillin','tryptophan','phenylalanine','glutamic','alanine','glycine','menthol','vanillin'],
+    explosive: ['tnt','nitroglycerin','kno3','n2o5','n2o4','phosgene','clf3','cyanide','nacn','kcn','na2o2','p4s3'],
+};
+
+function getRecipeCategory(id) {
+    for (const [cat, ids] of Object.entries(recipeCategories)) {
+        if (ids.includes(id)) return cat;
+    }
+    return 'other';
+}
+
+function setEncyclopediaFilter(filter) {
+    encyclopediaFilter = filter;
+    // Update button styles
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        const isActive = btn.getAttribute('data-filter') === filter;
+        btn.className = `filter-btn px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
+            isActive
+                ? 'bg-blue-500 border-blue-400 text-white'
+                : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
+        }`;
+    });
+    renderDiscoveredList();
+}
+
+function applyEncyclopediaFilters(items) {
+    return items.filter(item => {
+        const matchesFilter = encyclopediaFilter === 'all' || recipeCategories[encyclopediaFilter]?.includes(item.id);
+        const searchTerm = encyclopediaSearch.toLowerCase();
+        const matchesSearch = !searchTerm
+            || item.name.toLowerCase().includes(searchTerm)
+            || item.formula.toLowerCase().includes(searchTerm)
+            || item.desc.toLowerCase().includes(searchTerm);
+        return matchesFilter && matchesSearch;
+    });
+}
         // Start App
         window.onload = init;
 
     </script>
+    <!-- Achievement Toast -->
+<div id="achievement-toast">
+    <div class="toast-icon" id="toast-icon">🏆</div>
+    <div class="toast-body">
+        <span class="toast-label">Achievement Unlocked</span>
+        <span class="toast-name" id="toast-name"></span>
+        <span class="toast-desc" id="toast-desc"></span>
+    </div>
+</div>
+
+<!-- Achievements Modal -->
+<div id="achievements-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden">
+    <div class="bg-slate-800 border border-slate-600 rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl relative max-h-[80vh] flex flex-col">
+        <button onclick="closeAchievements()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <div class="flex items-center gap-3 mb-5">
+            <span class="text-3xl">🏆</span>
+            <div>
+                <h2 class="text-xl font-bold text-white">Achievements</h2>
+                <p id="ach-progress-text" class="text-sm text-slate-400"></p>
+            </div>
+        </div>
+        <div id="achievements-list" class="flex-1 overflow-y-auto flex flex-col gap-3 pr-1"></div>
+    </div>
+</div>
 </body>
 </html>
